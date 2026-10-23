@@ -1,0 +1,503 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Smetannik the game</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #1a202c; 
+            margin: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            overflow: hidden;
+            touch-action: none;
+        }
+        #game-container {
+            width: 100%;
+            height: 100%;
+            max-width: 480px; 
+            max-height: 900px;
+            position: relative;
+            background-color: #000;
+            overflow: hidden;
+            box-shadow: 0 0 20px rgba(0,0,0,0.5);
+        }
+        canvas {
+            display: block;
+            width: 100%;
+            height: 100%;
+        }
+        .btn-pulse:hover {
+            transform: scale(1.05);
+            transition: transform 0.2s;
+        }
+        input[type=range] {
+            accent-color: #3b82f6;
+        }
+    </style>
+</head>
+<body>
+
+<div id="game-container">
+    <canvas id="gameCanvas"></canvas>
+
+    <!-- UI: HUD (Счетчики, Жизни, Пауза) -->
+    <div id="hud" class="absolute top-0 left-0 w-full p-4 flex justify-between items-start hidden z-10 pointer-events-none">
+        <div class="flex flex-col gap-2">
+            <div class="flex items-center gap-2 bg-black/60 px-3 py-1.5 rounded-2xl border border-white/20 backdrop-blur-sm shadow-lg">
+                <img src="smetannik.png" class="w-6 h-6 object-contain" alt="С" onerror="this.style.display='none'">
+                <span id="smetannikCount" class="text-white font-bold text-xl">0</span>
+            </div>
+            <div class="flex items-center gap-2 bg-black/60 px-3 py-1.5 rounded-2xl border border-white/20 backdrop-blur-sm shadow-lg">
+                <img src="tomat.png" class="w-6 h-6 object-contain" alt="Т" onerror="this.style.display='none'">
+                <span id="tomatCount" class="text-white font-bold text-xl">0</span>
+            </div>
+            <div class="text-red-500 text-2xl font-bold drop-shadow-md mt-1" id="livesDisplay">❤️❤️❤️</div>
+        </div>
+        <button id="btn-pause" class="pointer-events-auto bg-black/50 backdrop-blur-sm border-2 border-white/50 text-white p-2 rounded-full w-12 h-12 flex items-center justify-center font-bold text-xl active:bg-white/40 shadow-lg">
+            ⏸
+        </button>
+    </div>
+
+    <!-- Экран: Главное Меню -->
+    <div id="screen-menu" class="absolute inset-0 flex flex-col justify-center items-center bg-black/80 z-20 transition-opacity duration-300">
+        <h1 class="text-5xl font-black text-transparent bg-clip-text bg-gradient-to-br from-yellow-300 to-orange-500 mb-10 text-center drop-shadow-lg leading-tight uppercase tracking-wider">
+            Smetannik<br>The Game
+        </h1>
+        <div class="flex flex-col gap-4 w-3/4 max-w-[250px]">
+            <button id="btn-play" class="btn-pulse bg-gradient-to-r from-green-400 to-green-600 text-white font-bold py-4 rounded-2xl shadow-lg border-b-4 border-green-700 active:border-b-0 active:translate-y-1">
+                ИГРАТЬ
+            </button>
+            <button id="btn-settings" class="btn-pulse bg-gray-700 text-white font-bold py-3 rounded-2xl shadow-lg border-b-4 border-gray-900 active:border-b-0 active:translate-y-1">
+                НАСТРОЙКИ
+            </button>
+        </div>
+    </div>
+
+    <!-- Экран: Настройки -->
+    <div id="screen-settings" class="absolute inset-0 flex justify-center items-center bg-black/80 z-50 hidden backdrop-blur-sm">
+        <div class="bg-gray-900 p-6 rounded-3xl w-4/5 max-w-[300px] text-center shadow-2xl border-2 border-gray-700">
+            <h3 class="text-2xl font-black text-white mb-6">НАСТРОЙКИ</h3>
+            <div class="mb-6 text-left">
+                <label class="text-gray-300 font-bold mb-2 block">Громкость звука</label>
+                <!-- Ползунок громкости -->
+                <input type="range" id="volumeSlider" min="0" max="1" step="0.1" value="1" class="w-full">
+            </div>
+            <div class="mb-8 flex items-center justify-between">
+                <span class="text-gray-300 font-bold">Без звука</span>
+                <!-- Галочка мута -->
+                <input type="checkbox" id="muteToggle" class="w-6 h-6 rounded accent-blue-500">
+            </div>
+            <button id="btn-close-settings" class="bg-blue-500 w-full text-white font-bold py-3 rounded-xl shadow border-b-4 border-blue-700 active:border-b-0 active:translate-y-1">
+                ГОТОВО
+            </button>
+        </div>
+    </div>
+
+    <!-- Экран: Пауза -->
+    <div id="screen-pause" class="absolute inset-0 flex flex-col justify-center items-center bg-black/70 z-30 hidden backdrop-blur-sm">
+        <h2 class="text-4xl font-black text-white mb-8 drop-shadow-lg">ПАУЗА</h2>
+        <div class="flex flex-col gap-4 w-3/4 max-w-[250px]">
+            <button id="btn-resume" class="btn-pulse bg-blue-500 text-white font-bold py-4 rounded-2xl shadow-lg border-b-4 border-blue-700 active:border-b-0 active:translate-y-1">
+                ПРОДОЛЖИТЬ
+            </button>
+            <button id="btn-quit" class="btn-pulse bg-red-500 text-white font-bold py-3 rounded-2xl shadow-lg border-b-4 border-red-700 active:border-b-0 active:translate-y-1">
+                В МЕНЮ
+            </button>
+        </div>
+    </div>
+
+    <!-- Экран: Game Over -->
+    <div id="screen-gameover" class="absolute inset-0 flex flex-col justify-center items-center bg-black/90 z-30 hidden">
+        <h2 class="text-5xl font-black text-red-500 mb-2 drop-shadow-lg uppercase">Игра окончена!</h2>
+        <p class="text-white text-xl mb-8">Собрано сметанников: <span id="finalScore" class="font-bold text-yellow-400 text-3xl block mt-2">0</span></p>
+        <div class="flex flex-col gap-4 w-3/4 max-w-[250px]">
+            <button id="btn-restart" class="btn-pulse bg-green-500 text-white font-bold py-4 rounded-2xl shadow-lg border-b-4 border-green-700 active:border-b-0 active:translate-y-1">
+                ИГРАТЬ СНОВА
+            </button>
+            <button id="btn-menu-from-go" class="btn-pulse bg-gray-600 text-white font-bold py-3 rounded-2xl shadow-lg border-b-4 border-gray-800 active:border-b-0 active:translate-y-1">
+                В ГЛАВНОЕ МЕНЮ
+            </button>
+        </div>
+    </div>
+</div>
+
+<script>
+    const canvas = document.getElementById('gameCanvas');
+    const ctx = canvas.getContext('2d');
+    const container = document.getElementById('game-container');
+
+    const screens = {
+        menu: document.getElementById('screen-menu'),
+        hud: document.getElementById('hud'),
+        settings: document.getElementById('screen-settings'),
+        pause: document.getElementById('screen-pause'),
+        gameOver: document.getElementById('screen-gameover')
+    };
+
+    // --- ЗВУКИ И НАСТРОЙКИ ---
+    const audio = {
+        music: new Audio('music.mp3'),
+        brosok: new Audio('brosok.mp3'),
+        error: new Audio('error.mp3'),
+        over: new Audio('over.mp3')
+    };
+    audio.music.loop = true;
+
+    const volSlider = document.getElementById('volumeSlider');
+    const muteToggle = document.getElementById('muteToggle');
+
+    // Функция обновления громкости "на лету"
+    function updateVolume() {
+        let vol = muteToggle.checked ? 0 : volSlider.value;
+        for (let key in audio) {
+            audio[key].volume = vol;
+        }
+    }
+    
+    // Слушаем изменения ползунка и галочки в настройках
+    volSlider.addEventListener('input', updateVolume);
+    muteToggle.addEventListener('change', updateVolume);
+    
+    // Выставляем громкость при старте страницы
+    updateVolume();
+
+    function playSound(name) {
+        if(audio[name] && !muteToggle.checked && volSlider.value > 0) {
+            if(name !== 'music') audio[name].currentTime = 0;
+            let p = audio[name].play();
+            if (p !== undefined) p.catch(() => {});
+        }
+    }
+
+    // --- ВИБРАЦИЯ ---
+    function vibrate(pattern) {
+        if (navigator.vibrate) {
+            navigator.vibrate(pattern);
+        }
+    }
+
+    // --- ПЕРЕМЕННЫЕ ИГРЫ ---
+    let gameLoopId;
+    let isPlaying = false;
+    let isPaused = false;
+    
+    let collectedSmetanniks = 0;
+    let collectedTomatoes = 0;
+    let lives = 3;
+    let frameCount = 0;
+    
+    const player = { w: 0, h: 0, x: 0, y: 0 };
+    let items = [];
+    let particles = [];
+
+    // Загрузка графики
+    const assets = {
+        bg: { img: new Image(), loaded: false },
+        player: { img: new Image(), loaded: false },
+        smetannik: { img: new Image(), loaded: false },
+        tomat: { img: new Image(), loaded: false }
+    };
+    
+    assets.bg.img.src = 'stolovka.jpg';
+    assets.bg.img.onload = () => assets.bg.loaded = true;
+
+    assets.player.img.src = 'Elisei.png';
+    assets.player.img.onload = () => assets.player.loaded = true;
+
+    assets.smetannik.img.src = 'smetannik.png';
+    assets.smetannik.img.onload = () => assets.smetannik.loaded = true;
+
+    assets.tomat.img.src = 'tomat.png';
+    assets.tomat.img.onload = () => assets.tomat.loaded = true;
+
+    function resizeCanvas() {
+        canvas.width = container.clientWidth;
+        canvas.height = container.clientHeight;
+        
+        // ВОЗВРАТ МАСШТАБА 2.5 (50% ширины)
+        player.w = Math.min(200, canvas.width * 0.5); 
+        player.h = player.w;
+
+        if (!isPlaying && !isPaused) {
+            player.x = canvas.width / 2 - player.w / 2;
+        }
+        player.y = canvas.height - player.h - 10;
+    }
+    window.addEventListener('resize', resizeCanvas);
+    resizeCanvas();
+
+    let targetX = canvas.width / 2;
+
+    function handleMove(e) {
+        if (!isPlaying || isPaused) return;
+        let clientX = (e.touches && e.touches.length > 0) ? e.touches[0].clientX : e.clientX;
+        const rect = canvas.getBoundingClientRect();
+        
+        // Свободное управление (выход за края экрана сохранен)
+        targetX = clientX - rect.left;
+    }
+    canvas.addEventListener('mousemove', handleMove);
+    canvas.addEventListener('touchmove', (e) => { if(e.cancelable) e.preventDefault(); handleMove(e); }, { passive: false });
+    canvas.addEventListener('mousedown', handleMove);
+    canvas.addEventListener('touchstart', handleMove, { passive: false });
+
+    function spawnParticles(x, y, type) {
+        const color = type === 'tomat' ? '#ef4444' : '#fef08a';
+        for(let i=0; i<15; i++) {
+            particles.push({
+                x: x, y: y,
+                vx: (Math.random() - 0.5) * 10,
+                vy: (Math.random() * -8) - 2,
+                life: 1.0,
+                color: color
+            });
+        }
+    }
+
+    function initGame() {
+        collectedSmetanniks = 0;
+        collectedTomatoes = 0;
+        lives = 3;
+        items = [];
+        particles = [];
+        frameCount = 0;
+        player.x = canvas.width / 2 - player.w / 2;
+        targetX = canvas.width / 2;
+        updateHUD();
+    }
+
+    function spawnItem() {
+        const baseSpeed = 2.5 + (collectedSmetanniks / 40); 
+        const size = Math.min(60, canvas.width * 0.15);
+        const type = Math.random() > 0.85 ? 'tomat' : 'smetannik';
+        
+        let newX = 0;
+        let isValidPosition = false;
+
+        // УМНЫЙ СПАВН: Проверяем, чтобы новые предметы не падали прямо на уже летящие
+        for (let attempt = 0; attempt < 10; attempt++) {
+            newX = Math.random() * (canvas.width - size);
+            isValidPosition = true;
+            
+            for (let item of items) {
+                // Если другой предмет еще наверху (y < size * 3) и слишком близко по X (расстояние < size * 1.5)
+                if (item.y < size * 3 && Math.abs(item.x - newX) < size * 1.5) {
+                    isValidPosition = false;
+                    break;
+                }
+            }
+            if (isValidPosition) break; // Нашли хорошее место!
+        }
+
+        items.push({
+            x: newX,
+            y: -size,
+            w: size, h: size,
+            speed: baseSpeed + (Math.random() * 1.5),
+            type: type
+        });
+    }
+
+    function update() {
+        if (!isPlaying || isPaused) return;
+        frameCount++;
+
+        player.x += (targetX - player.w / 2 - player.x) * 0.3;
+
+        const spawnRate = Math.max(40, 100 - Math.floor(collectedSmetanniks / 3));
+        if (frameCount % spawnRate === 0) spawnItem();
+
+        for (let i = items.length - 1; i >= 0; i--) {
+            let item = items[i];
+            item.y += item.speed;
+
+            const padding = 15;
+            
+            if (
+                item.x < player.x + player.w - padding &&
+                item.x + item.w > player.x + padding &&
+                item.y < player.y + player.h - padding &&
+                item.y + item.h > player.y + padding
+            ) {
+                if (item.type === 'smetannik') {
+                    collectedSmetanniks++;
+                } else {
+                    collectedTomatoes++;
+                    lives--;
+                    playSound('brosok');
+                    vibrate(100); 
+                    spawnParticles(item.x + item.w/2, item.y + item.h/2, 'tomat');
+                }
+                items.splice(i, 1);
+                updateHUD();
+                if (lives <= 0) { gameOver(); return; }
+                continue;
+            }
+
+            if (item.y > canvas.height) {
+                if (item.type === 'smetannik') {
+                    lives--;
+                    playSound('error');
+                    vibrate([50, 50, 50]); 
+                    spawnParticles(item.x + item.w/2, canvas.height, 'smetannik');
+                } else {
+                    spawnParticles(item.x + item.w/2, canvas.height, 'tomat');
+                }
+                items.splice(i, 1);
+                updateHUD();
+                if (lives <= 0) { gameOver(); return; }
+            }
+        }
+
+        for (let i = particles.length - 1; i >= 0; i--) {
+            let p = particles[i];
+            p.x += p.vx;
+            p.y += p.vy;
+            p.vy += 0.4;
+            p.life -= 0.03;
+            if (p.life <= 0) particles.splice(i, 1);
+        }
+    }
+
+    function draw() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        
+        if (assets.bg.loaded) {
+            ctx.drawImage(assets.bg.img, 0, 0, canvas.width, canvas.height);
+        } else {
+            ctx.fillStyle = '#4a5568';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+        }
+
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.4)';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+        ctx.save();
+        ctx.shadowColor = 'rgba(255, 255, 255, 0.5)';
+        ctx.shadowBlur = 10;
+        if (assets.player.loaded) {
+            ctx.drawImage(assets.player.img, player.x, player.y, player.w, player.h);
+        } else {
+            ctx.fillStyle = '#3182ce';
+            ctx.fillRect(player.x, player.y, player.w, player.h);
+        }
+        ctx.restore();
+
+        for (let item of items) {
+            ctx.save();
+            if (item.type === 'smetannik') {
+                ctx.shadowColor = 'rgba(252, 211, 77, 0.8)';
+                ctx.shadowBlur = 15;
+                if (assets.smetannik.loaded) ctx.drawImage(assets.smetannik.img, item.x, item.y, item.w, item.h);
+                else { ctx.fillStyle = '#ecc94b'; ctx.fillRect(item.x, item.y, item.w, item.h); }
+            } else {
+                ctx.shadowColor = 'rgba(239, 68, 68, 0.8)';
+                ctx.shadowBlur = 15;
+                if (assets.tomat.loaded) ctx.drawImage(assets.tomat.img, item.x, item.y, item.w, item.h);
+                else { ctx.fillStyle = '#ef4444'; ctx.fillRect(item.x, item.y, item.w, item.h); }
+            }
+            ctx.restore();
+        }
+
+        for (let p of particles) {
+            ctx.globalAlpha = p.life;
+            ctx.fillStyle = p.color;
+            ctx.beginPath();
+            ctx.arc(p.x, p.y, 4, 0, Math.PI * 2);
+            ctx.fill();
+        }
+        ctx.globalAlpha = 1.0;
+    }
+
+    function loop() {
+        update();
+        draw();
+        if (isPlaying) gameLoopId = requestAnimationFrame(loop);
+    }
+
+    function updateHUD() {
+        document.getElementById('smetannikCount').innerText = collectedSmetanniks;
+        document.getElementById('tomatCount').innerText = collectedTomatoes;
+        document.getElementById('livesDisplay').innerText = '❤️'.repeat(Math.max(0, lives));
+    }
+
+    function showScreen(screenKey) {
+        Object.values(screens).forEach(s => s.classList.add('hidden'));
+        screens[screenKey].classList.remove('hidden');
+    }
+
+    function startGame() {
+        initGame();
+        isPlaying = true;
+        isPaused = false;
+        showScreen('hud');
+        playSound('music');
+        loop();
+    }
+
+    // --- ПАУЗА И ВОЗОБНОВЛЕНИЕ С МУЗЫКОЙ ---
+    function pauseGame() {
+        if (!isPlaying || isPaused) return;
+        isPaused = true;
+        audio.music.pause(); // Музыка останавливается
+        showScreen('pause');
+    }
+
+    function resumeGame() {
+        if (!isPlaying || !isPaused) return;
+        isPaused = false;
+        showScreen('hud');
+        targetX = player.x + player.w/2;
+        
+        // Музыка продолжается (если звук не выключен в настройках)
+        if (!muteToggle.checked && volSlider.value > 0) {
+            audio.music.play().catch(()=>{});
+        }
+    }
+
+    function gameOver() {
+        isPlaying = false;
+        cancelAnimationFrame(gameLoopId);
+        document.getElementById('finalScore').innerText = collectedSmetanniks;
+        
+        audio.music.pause();
+        audio.music.currentTime = 0;
+        playSound('over');
+        
+        showScreen('gameOver');
+    }
+
+    function quitToMenu() {
+        isPlaying = false;
+        isPaused = false;
+        cancelAnimationFrame(gameLoopId);
+        audio.music.pause();
+        audio.music.currentTime = 0;
+        initGame(); 
+        draw(); 
+        showScreen('menu');
+    }
+
+    document.getElementById('btn-play').addEventListener('click', startGame);
+    document.getElementById('btn-settings').addEventListener('click', () => screens.settings.classList.remove('hidden'));
+    document.getElementById('btn-close-settings').addEventListener('click', () => screens.settings.classList.add('hidden'));
+    
+    document.getElementById('btn-pause').addEventListener('click', pauseGame);
+    document.getElementById('btn-resume').addEventListener('click', resumeGame);
+    document.getElementById('btn-quit').addEventListener('click', quitToMenu);
+    
+    document.getElementById('btn-restart').addEventListener('click', startGame);
+    document.getElementById('btn-menu-from-go').addEventListener('click', quitToMenu);
+
+    initGame();
+    setTimeout(draw, 200);
+</script>
+</body>
+</html>
