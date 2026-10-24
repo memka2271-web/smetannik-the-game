@@ -2,43 +2,494 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="theme-color" content="#17101f">
     <title>Smetannik the game</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap" rel="stylesheet">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;700;800&family=Unbounded:wght@600;800;900&display=swap" rel="stylesheet">
     <style>
-        body {
-            font-family: 'Inter', sans-serif;
-            background-color: #1a202c; 
-            margin: 0;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
-            overflow: hidden;
-            touch-action: none;
+        :root {
+            --plum: #17101f;
+            --glass: rgba(28, 18, 40, 0.55);
+            --glass-strong: rgba(24, 15, 34, 0.82);
+            --stroke: rgba(255, 243, 214, 0.14);
+            --text: #fff6e0;
+            --muted: rgba(255, 246, 224, 0.62);
+            --cream: #fff3d6;
+            --butter: #ffd35c;
+            --butter-deep: #f2a20f;
+            --tomato: #ff5a52;
+            --olive: #b7d65a;
+            --font-display: 'Unbounded', system-ui, sans-serif;
+            --font-body: 'Manrope', system-ui, sans-serif;
         }
+
+        * { box-sizing: border-box; }
+
+        html, body {
+            margin: 0;
+            height: 100%;
+            background: var(--plum);
+            color: var(--text);
+            font-family: var(--font-body);
+            overflow: hidden;
+            overscroll-behavior: none;
+            touch-action: manipulation;
+            -webkit-tap-highlight-color: transparent;
+        }
+
         #game-container {
+            position: relative;
             width: 100%;
             height: 100%;
-            position: relative;
-            background-color: #000;
             overflow: hidden;
+            background: #000;
         }
+
         canvas {
             display: block;
             width: 100%;
             height: 100%;
+            touch-action: none;
         }
-        .btn-pulse:hover {
-            transform: scale(1.05);
-            transition: transform 0.2s;
+
+        button { font-family: inherit; }
+        :focus-visible { outline: 3px solid var(--butter); outline-offset: 3px; }
+
+        .hidden { display: none !important; }
+
+        /* ---------- Экраны ---------- */
+        .screen {
+            position: absolute;
+            inset: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: max(24px, env(safe-area-inset-top)) 24px max(24px, env(safe-area-inset-bottom));
         }
+        .screen:not(.hidden) { animation: screenIn 0.4s cubic-bezier(.2,.8,.2,1) both; }
+
+        #screen-menu {
+            z-index: 20;
+            background:
+                radial-gradient(90% 60% at 50% 0%, rgba(255, 211, 92, 0.22), transparent 70%),
+                linear-gradient(180deg, rgba(23, 16, 31, 0.55) 0%, rgba(23, 16, 31, 0.88) 100%);
+            backdrop-filter: blur(7px);
+            -webkit-backdrop-filter: blur(7px);
+        }
+        #screen-skins, #screen-settings {
+            z-index: 50;
+            background: rgba(14, 9, 20, 0.72);
+            backdrop-filter: blur(14px);
+            -webkit-backdrop-filter: blur(14px);
+        }
+        #screen-pause {
+            z-index: 30;
+            background: rgba(14, 9, 20, 0.62);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+        }
+        #screen-gameover {
+            z-index: 30;
+            background:
+                radial-gradient(80% 50% at 50% 0%, rgba(255, 90, 82, 0.28), transparent 70%),
+                rgba(14, 9, 20, 0.86);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+        }
+
+        /* ---------- Кнопки ---------- */
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            border: 0;
+            cursor: pointer;
+            color: var(--text);
+            font-family: var(--font-display);
+            font-weight: 800;
+            font-size: 14px;
+            letter-spacing: 0.01em;
+            border-radius: 18px;
+            user-select: none;
+            -webkit-user-select: none;
+            transition: transform 0.15s ease, box-shadow 0.15s ease, background 0.2s ease;
+        }
+        .btn svg { width: 20px; height: 20px; flex: none; }
+
+        .btn-primary {
+            padding: 20px 28px;
+            font-size: 18px;
+            color: #3a1d00;
+            background: linear-gradient(180deg, #ffe58a 0%, #ffc233 100%);
+            box-shadow: 0 6px 0 #b86d06, 0 18px 34px -10px rgba(255, 194, 51, 0.55), inset 0 2px 0 rgba(255, 255, 255, 0.7);
+        }
+        .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 8px 0 #b86d06, 0 22px 38px -10px rgba(255, 194, 51, 0.6), inset 0 2px 0 rgba(255, 255, 255, 0.7); }
+        .btn-primary:active { transform: translateY(5px); box-shadow: 0 1px 0 #b86d06, 0 8px 18px -8px rgba(255, 194, 51, 0.5), inset 0 2px 0 rgba(255, 255, 255, 0.7); }
+        .btn-primary svg { width: 22px; height: 22px; }
+
+        .btn-glass {
+            padding: 15px 18px;
+            background: rgba(255, 243, 214, 0.08);
+            border: 1px solid var(--stroke);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+        }
+        .btn-glass:hover { background: rgba(255, 243, 214, 0.14); transform: translateY(-2px); }
+        .btn-glass:active { transform: translateY(1px) scale(0.98); }
+
+        .btn-danger {
+            padding: 15px 18px;
+            background: rgba(255, 90, 82, 0.14);
+            border: 1px solid rgba(255, 90, 82, 0.4);
+            color: #ffb0aa;
+        }
+        .btn-danger:hover { background: rgba(255, 90, 82, 0.24); transform: translateY(-2px); }
+        .btn-danger:active { transform: translateY(1px) scale(0.98); }
+
+        .btn-block { width: 100%; }
+
+        /* ---------- Главное меню ---------- */
+        .menu-inner {
+            position: relative;
+            z-index: 2;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            width: 100%;
+            max-width: 340px;
+        }
+
+        .logo { text-align: center; margin-bottom: 26px; }
+        .logo-title {
+            margin: 0;
+            font-family: var(--font-display);
+            font-weight: 900;
+            font-size: clamp(34px, 10.5vw, 62px);
+            line-height: 1;
+            letter-spacing: -0.02em;
+            color: var(--cream);
+            background: linear-gradient(180deg, #fffaf0 10%, #ffd35c 100%);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+            filter: drop-shadow(0 3px 0 #c2410c) drop-shadow(0 12px 22px rgba(255, 140, 40, 0.35));
+        }
+        .logo-tag {
+            display: inline-block;
+            margin-top: 14px;
+            padding: 6px 16px;
+            font-family: var(--font-display);
+            font-weight: 800;
+            font-size: 13px;
+            color: #fff;
+            background: var(--tomato);
+            border-radius: 999px;
+            transform: rotate(-3deg);
+            box-shadow: 0 4px 0 #b3302a, 0 10px 20px -6px rgba(255, 90, 82, 0.6);
+        }
+
+        .best-card {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 10px 20px 10px 12px;
+            margin-bottom: 30px;
+            background: var(--glass);
+            border: 1px solid var(--stroke);
+            border-radius: 999px;
+            backdrop-filter: blur(14px);
+            -webkit-backdrop-filter: blur(14px);
+        }
+        .best-icon {
+            width: 38px; height: 38px;
+            display: grid; place-items: center;
+            border-radius: 50%;
+            background: rgba(255, 211, 92, 0.16);
+            color: var(--butter);
+        }
+        .best-icon svg { width: 20px; height: 20px; }
+        .best-card small { display: block; font-size: 12px; font-weight: 700; color: var(--muted); }
+        .best-card b { display: block; font-family: var(--font-display); font-weight: 800; font-size: 22px; line-height: 1.1; color: var(--butter); font-variant-numeric: tabular-nums; }
+
+        .menu-actions { display: flex; flex-direction: column; gap: 16px; width: 100%; }
+        .btn-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+
+        .ghost-chip {
+            position: absolute;
+            top: max(14px, env(safe-area-inset-top));
+            right: max(14px, env(safe-area-inset-right));
+            z-index: 5;
+            padding: 8px 12px;
+            font-size: 10px;
+            font-weight: 800;
+            color: rgba(255, 246, 224, 0.4);
+            background: transparent;
+            border: 1px dashed rgba(255, 246, 224, 0.2);
+            border-radius: 999px;
+            cursor: pointer;
+            transition: color 0.2s, border-color 0.2s, background 0.2s;
+        }
+        .ghost-chip:hover { color: var(--text); border-color: rgba(255, 246, 224, 0.5); }
+        .ghost-chip.on { color: #3a1d00; background: var(--butter); border: 1px solid var(--butter); }
+
+        /* Плавающие предметы в меню */
+        .floaters { position: absolute; inset: 0; pointer-events: none; overflow: hidden; z-index: 1; }
+        .floater {
+            position: absolute;
+            width: 64px;
+            opacity: 0.5;
+            filter: drop-shadow(0 10px 18px rgba(0, 0, 0, 0.5));
+            animation: floatY 6s ease-in-out infinite;
+        }
+        .f1 { top: 9%;  left: 8%;   width: 70px; animation-delay: 0s; }
+        .f2 { top: 20%; right: 9%;  width: 54px; animation-delay: -2s; }
+        .f3 { bottom: 14%; left: 10%; width: 58px; animation-delay: -4s; }
+        .f4 { bottom: 9%;  right: 12%; width: 74px; animation-delay: -1s; }
+
+        /* ---------- Панели ---------- */
+        .panel {
+            width: min(92vw, 360px);
+            padding: 26px 24px 24px;
+            background: var(--glass-strong);
+            border: 1px solid var(--stroke);
+            border-radius: 30px;
+            box-shadow: 0 30px 60px -20px rgba(0, 0, 0, 0.7), inset 0 1px 0 rgba(255, 255, 255, 0.06);
+        }
+        .panel-title {
+            margin: 0 0 22px;
+            font-family: var(--font-display);
+            font-weight: 900;
+            font-size: 26px;
+            letter-spacing: -0.01em;
+            text-align: center;
+        }
+
+        .field { margin-bottom: 20px; }
+        .field-row { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 10px; }
+        .field-row label { font-size: 15px; font-weight: 700; color: var(--text); }
+        .range-val { font-family: var(--font-display); font-weight: 800; font-size: 13px; color: var(--butter); font-variant-numeric: tabular-nums; }
+
         input[type=range] {
-            accent-color: #3b82f6;
+            -webkit-appearance: none;
+            appearance: none;
+            display: block;
+            width: 100%;
+            height: 10px;
+            margin: 0;
+            border-radius: 999px;
+            background: linear-gradient(90deg, var(--butter) var(--p, 50%), rgba(255, 243, 214, 0.14) var(--p, 50%));
+            outline: none;
+            cursor: pointer;
         }
-        
-        /* Мемная тряска и пульсация для 67 */
+        input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 26px; height: 26px;
+            border-radius: 50%;
+            background: var(--cream);
+            border: 4px solid var(--butter-deep);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+        }
+        input[type=range]::-moz-range-thumb {
+            width: 18px; height: 18px;
+            border-radius: 50%;
+            background: var(--cream);
+            border: 4px solid var(--butter-deep);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+        }
+        input[type=range]:focus-visible { outline-offset: 8px; }
+
+        .stack { display: flex; flex-direction: column; gap: 12px; width: 100%; }
+        .btn-violet {
+            padding: 18px 20px;
+            font-size: 15px;
+            color: #fff;
+            background: linear-gradient(180deg, #8f7bff 0%, #6a54f0 100%);
+            box-shadow: 0 5px 0 #3e2fb0, 0 14px 28px -10px rgba(106, 84, 240, 0.6), inset 0 2px 0 rgba(255, 255, 255, 0.3);
+        }
+        .btn-violet:hover { transform: translateY(-2px); }
+        .btn-violet:active { transform: translateY(4px); box-shadow: 0 1px 0 #3e2fb0, inset 0 2px 0 rgba(255, 255, 255, 0.3); }
+
+        /* ---------- Скины ---------- */
+        .skins-title { margin: 0 0 6px; font-family: var(--font-display); font-weight: 900; font-size: 28px; text-align: center; }
+        .skins-sub { margin: 0 0 22px; color: var(--muted); font-weight: 700; font-size: 14px; text-align: center; }
+
+        .skin-grid {
+            display: flex;
+            gap: 14px;
+            justify-content: safe center;
+            width: 100%;
+            max-width: 100vw;
+            padding: 14px 20px 22px;
+            margin-bottom: 8px;
+            overflow-x: auto;
+            scroll-snap-type: x mandatory;
+            touch-action: pan-x;
+            scrollbar-width: none;
+        }
+        .skin-grid::-webkit-scrollbar { display: none; }
+
+        .skin-card {
+            position: relative;
+            flex: 0 0 auto;
+            width: 124px;
+            padding: 10px 10px 12px;
+            scroll-snap-align: center;
+            color: var(--text);
+            background: var(--glass);
+            border: 2px solid var(--stroke);
+            border-radius: 24px;
+            cursor: pointer;
+            transition: transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
+        }
+        .skin-card:hover { transform: translateY(-4px); }
+        .skin-card.active {
+            border-color: var(--butter);
+            background: rgba(255, 211, 92, 0.1);
+            box-shadow: 0 0 0 4px rgba(255, 211, 92, 0.15), 0 18px 34px -14px rgba(255, 194, 51, 0.5);
+            transform: translateY(-4px);
+        }
+        .skin-art {
+            display: grid;
+            place-items: end center;
+            width: 100%;
+            aspect-ratio: 1;
+            overflow: hidden;
+            border-radius: 16px;
+            background: radial-gradient(90% 90% at 50% 100%, rgba(255, 243, 214, 0.2), rgba(255, 243, 214, 0.04));
+        }
+        .skin-art img { max-width: 100%; max-height: 100%; object-fit: contain; }
+        .skin-name { display: block; margin-top: 10px; font-weight: 800; font-size: 15px; text-align: center; }
+        .skin-check {
+            position: absolute;
+            top: -10px; right: -10px;
+            width: 28px; height: 28px;
+            display: none;
+            place-items: center;
+            border-radius: 50%;
+            background: var(--butter);
+            color: #3a1d00;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.4);
+        }
+        .skin-check svg { width: 16px; height: 16px; }
+        .skin-card.active .skin-check { display: grid; animation: pop 0.35s ease; }
+
+        /* ---------- HUD ---------- */
+        .hud {
+            position: absolute;
+            top: 0; left: 0; right: 0;
+            z-index: 10;
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            padding: max(14px, env(safe-area-inset-top)) max(14px, env(safe-area-inset-right)) 0 max(14px, env(safe-area-inset-left));
+            pointer-events: none;
+        }
+        .stat-row { display: flex; gap: 8px; }
+        .chip {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 5px 16px 5px 7px;
+            background: var(--glass);
+            border: 1px solid var(--stroke);
+            border-radius: 999px;
+            backdrop-filter: blur(14px);
+            -webkit-backdrop-filter: blur(14px);
+            box-shadow: 0 10px 24px -12px rgba(0, 0, 0, 0.7);
+        }
+        .chip img { width: 30px; height: 30px; object-fit: contain; }
+        .chip span { min-width: 1.2ch; font-family: var(--font-display); font-weight: 800; font-size: 18px; font-variant-numeric: tabular-nums; }
+        .chip-s span { color: var(--butter); }
+        .chip-t span { color: #ff8f88; }
+        .chip.bump { animation: bump 0.3s ease; }
+
+        .lives { display: flex; align-items: center; gap: 4px; margin: 10px 0 0 4px; }
+        .heart { width: 26px; height: 26px; fill: var(--tomato); filter: drop-shadow(0 2px 6px rgba(255, 90, 82, 0.6)); }
+        .lives-x { margin-left: 2px; font-family: var(--font-display); font-weight: 800; font-size: 16px; color: #ff8f88; }
+        .lives.hit { animation: shake 0.4s ease; }
+        .lives.gain { animation: pop 0.4s ease; }
+
+        .icon-btn {
+            pointer-events: auto;
+            display: grid;
+            place-items: center;
+            width: 48px; height: 48px;
+            color: var(--text);
+            background: var(--glass);
+            border: 1px solid var(--stroke);
+            border-radius: 50%;
+            cursor: pointer;
+            backdrop-filter: blur(14px);
+            -webkit-backdrop-filter: blur(14px);
+            box-shadow: 0 10px 24px -12px rgba(0, 0, 0, 0.7);
+            transition: transform 0.15s ease, background 0.2s ease;
+        }
+        .icon-btn:hover { background: rgba(255, 243, 214, 0.16); }
+        .icon-btn:active { transform: scale(0.92); }
+        .icon-btn svg { width: 20px; height: 20px; }
+
+        /* ---------- Game over ---------- */
+        .go-card { text-align: center; }
+        .go-title { margin: 0 0 6px; font-family: var(--font-display); font-weight: 900; font-size: clamp(28px, 8vw, 38px); line-height: 1.05; letter-spacing: -0.02em; color: var(--tomato); filter: drop-shadow(0 0 22px rgba(255, 90, 82, 0.4)); }
+        .go-label { margin: 0; font-weight: 700; font-size: 15px; color: var(--muted); }
+        .go-score {
+            display: block;
+            margin: 6px 0 12px;
+            font-family: var(--font-display);
+            font-weight: 900;
+            font-size: 84px;
+            line-height: 1;
+            font-variant-numeric: tabular-nums;
+            background: linear-gradient(180deg, #fffaf0 5%, #ffd35c 100%);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+            filter: drop-shadow(0 3px 0 #c2410c);
+        }
+        .new-record {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 8px;
+            padding: 7px 14px;
+            font-family: var(--font-display);
+            font-weight: 800;
+            font-size: 12px;
+            color: #3a1d00;
+            background: var(--butter);
+            border-radius: 999px;
+            animation: pop 0.5s ease 0.25s both;
+        }
+        .new-record svg { width: 16px; height: 16px; }
+        .go-best { margin: 0 0 26px; font-size: 14px; font-weight: 700; color: var(--muted); }
+        .go-best b { color: var(--butter); font-family: var(--font-display); }
+
+        /* ---------- Пасхалка 67 ---------- */
+        #meme67 { position: absolute; inset: 0; z-index: 40; display: flex; justify-content: center; align-items: center; pointer-events: none; }
+        #meme67 h1 {
+            margin: 0;
+            font-family: var(--font-display);
+            font-weight: 900;
+            font-size: clamp(110px, 30vw, 200px);
+            line-height: 1;
+            background: linear-gradient(135deg, #a78bfa, #f472b6);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+            filter: drop-shadow(0 0 20px rgba(255, 255, 255, 0.8));
+        }
+        .meme-67 { display: inline-block; animation: memeShake 0.4s infinite; }
+
+        /* ---------- Анимации ---------- */
+        @keyframes screenIn { from { opacity: 0; transform: translateY(14px) scale(0.985); } to { opacity: 1; transform: none; } }
+        @keyframes floatY { 0%, 100% { transform: translateY(0) rotate(-6deg); } 50% { transform: translateY(-20px) rotate(8deg); } }
+        @keyframes bump { 0% { transform: scale(1); } 40% { transform: scale(1.14); } 100% { transform: scale(1); } }
+        @keyframes pop { 0% { transform: scale(0.6); } 60% { transform: scale(1.15); } 100% { transform: scale(1); } }
+        @keyframes shake { 0%, 100% { transform: translateX(0); } 20% { transform: translateX(-6px); } 40% { transform: translateX(6px); } 60% { transform: translateX(-4px); } 80% { transform: translateX(3px); } }
         @keyframes memeShake {
             0% { transform: translate(2px, 1px) rotate(0deg) scale(1); }
             10% { transform: translate(-1px, -2px) rotate(-3deg) scale(1.1); }
@@ -52,9 +503,15 @@
             90% { transform: translate(2px, 2px) rotate(0deg) scale(1.1); }
             100% { transform: translate(1px, -2px) rotate(-3deg) scale(1); }
         }
-        .meme-67 {
-            display: inline-block; /* Необходимо для работы transform */
-            animation: memeShake 0.4s infinite;
+
+        @media (prefers-reduced-motion: reduce) {
+            .floater { animation: none; }
+            .screen:not(.hidden) { animation: none; }
+        }
+        @media (max-height: 560px) {
+            .logo { margin-bottom: 14px; }
+            .best-card { margin-bottom: 16px; }
+            .btn-primary { padding: 14px 24px; }
         }
     </style>
 </head>
@@ -63,134 +520,157 @@
 <div id="game-container">
     <canvas id="gameCanvas"></canvas>
 
-    <!-- UI: HUD (Счетчики, Жизни, Пауза) -->
-    <div id="hud" class="absolute top-0 left-0 w-full p-4 flex justify-between items-start hidden z-10 pointer-events-none">
-        <div class="flex flex-col gap-2">
-            <div class="flex items-center gap-2 bg-black/60 px-3 py-1.5 rounded-2xl border border-white/20 backdrop-blur-sm shadow-lg">
-                <img src="smetannik.png" class="w-6 h-6 object-contain" alt="С" onerror="this.style.display='none'">
-                <span id="smetannikCount" class="text-white font-bold text-xl">0</span>
+    <!-- HUD -->
+    <div id="hud" class="hud hidden">
+        <div>
+            <div class="stat-row">
+                <div id="chipS" class="chip chip-s">
+                    <img src="smetannik.png" alt="" onerror="this.style.display='none'">
+                    <span id="smetannikCount">0</span>
+                </div>
+                <div id="chipT" class="chip chip-t">
+                    <img src="tomat.png" alt="" onerror="this.style.display='none'">
+                    <span id="tomatCount">0</span>
+                </div>
             </div>
-            <div class="flex items-center gap-2 bg-black/60 px-3 py-1.5 rounded-2xl border border-white/20 backdrop-blur-sm shadow-lg">
-                <img src="tomat.png" class="w-6 h-6 object-contain" alt="Т" onerror="this.style.display='none'">
-                <span id="tomatCount" class="text-white font-bold text-xl">0</span>
-            </div>
-            <div class="text-red-500 text-2xl font-bold drop-shadow-md mt-1" id="livesDisplay">❤️❤️❤️</div>
+            <div id="livesDisplay" class="lives"></div>
         </div>
-        <button id="btn-pause" class="pointer-events-auto bg-black/50 backdrop-blur-sm border-2 border-white/50 text-white p-2 rounded-full w-12 h-12 flex items-center justify-center font-bold text-xl active:bg-white/40 shadow-lg">
-            ⏸
+        <button id="btn-pause" class="icon-btn" aria-label="Пауза">
+            <svg viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="4.5" width="4" height="15" rx="1.5"/><rect x="14" y="4.5" width="4" height="15" rx="1.5"/></svg>
         </button>
     </div>
 
-    <!-- Пасхалка 67 (без блюра и фона) -->
-    <div id="meme67" class="absolute inset-0 flex justify-center items-center pointer-events-none hidden z-40">
-        <h1 class="text-[120px] md:text-[180px] font-black text-transparent bg-clip-text bg-gradient-to-br from-purple-400 to-pink-600 drop-shadow-[0_0_20px_rgba(255,255,255,0.8)] meme-67">
-            67
-        </h1>
-    </div>
+    <!-- Пасхалка 67 -->
+    <div id="meme67" class="hidden"><h1 class="meme-67">67</h1></div>
 
-    <!-- Экран: Главное Меню -->
-    <div id="screen-menu" class="absolute inset-0 flex flex-col justify-center items-center bg-black/80 z-20 transition-opacity duration-300">
-        
-        <button id="btn-nasevich" class="absolute top-4 right-4 text-[9px] font-bold text-white/30 hover:text-white transition-colors z-50 p-2 tracking-widest cursor-pointer">
-            ВКЛЮЧИТЬ НАСЕВИЧА
-        </button>
+    <!-- Главное меню -->
+    <div id="screen-menu" class="screen">
+        <button id="btn-nasevich" class="ghost-chip">ВКЛЮЧИТЬ НАСЕВИЧА</button>
 
-        <h1 class="text-5xl font-black text-transparent bg-clip-text bg-gradient-to-br from-yellow-300 to-orange-500 mb-2 text-center drop-shadow-lg leading-tight uppercase tracking-wider">
-            Smetannik<br>The Game
-        </h1>
-        <p class="text-white/70 font-bold mb-8 text-xl bg-black/50 px-4 py-1 rounded-full border border-white/10">Рекорд: <span id="highScoreDisplay" class="text-yellow-400">0</span></p>
-
-        <div class="flex flex-col gap-4 w-3/4 max-w-[280px]">
-            <button id="btn-play" class="btn-pulse bg-gradient-to-r from-green-400 to-green-600 text-white font-bold py-4 rounded-2xl shadow-lg border-b-4 border-green-700 active:border-b-0 active:translate-y-1">
-                ИГРАТЬ
-            </button>
-            <button id="btn-skins" class="btn-pulse bg-purple-600 text-white font-bold py-3 rounded-2xl shadow-lg border-b-4 border-purple-800 active:border-b-0 active:translate-y-1">
-                СКИНЫ
-            </button>
-            <button id="btn-settings" class="btn-pulse bg-gray-700 text-white font-bold py-3 rounded-2xl shadow-lg border-b-4 border-gray-900 active:border-b-0 active:translate-y-1">
-                НАСТРОЙКИ
-            </button>
+        <div class="floaters" aria-hidden="true">
+            <img class="floater f1" src="smetannik.png" alt="" onerror="this.remove()">
+            <img class="floater f2" src="tomat.png" alt="" onerror="this.remove()">
+            <img class="floater f3" src="olive.png" alt="" onerror="this.remove()">
+            <img class="floater f4" src="smetannik.png" alt="" onerror="this.remove()">
         </div>
-    </div>
 
-    <!-- Экран: Скины -->
-    <div id="screen-skins" class="absolute inset-0 flex flex-col justify-center items-center bg-black/80 z-50 hidden transition-opacity duration-300">
-        <h3 class="text-3xl font-black text-white mb-8">ВЫБОР СКИНА</h3>
-        <div class="flex gap-4 mb-10 overflow-x-auto p-4 max-w-full">
-            <div class="skin-card bg-gray-800 border-4 border-yellow-400 p-2 rounded-2xl cursor-pointer" data-skin="elisei.png">
-                <div class="w-24 h-24 bg-gray-700 rounded-xl flex items-center justify-center overflow-hidden mb-2">
-                    <img src="elisei.png" class="h-full object-contain" alt="Елисей">
+        <div class="menu-inner">
+            <header class="logo">
+                <h1 class="logo-title">Smetannik</h1>
+                <span class="logo-tag">The Game</span>
+            </header>
+
+            <div class="best-card">
+                <div class="best-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 4h8v5a4 4 0 0 1-8 0V4zM8 6H4v1a4 4 0 0 0 4 4M16 6h4v1a4 4 0 0 1-4 4M12 13v4M8 20h8M10 17h4"/></svg>
                 </div>
-                <p class="text-white text-center font-bold">Елисей</p>
-            </div>
-            <div class="skin-card bg-gray-800 border-4 border-transparent p-2 rounded-2xl cursor-pointer" data-skin="greben.png">
-                <div class="w-24 h-24 bg-gray-700 rounded-xl flex items-center justify-center overflow-hidden mb-2">
-                    <img src="greben.png" onerror="this.src='greben.jpg'" class="h-full object-contain" alt="Ортём">
+                <div>
+                    <small>Рекорд</small>
+                    <b id="highScoreDisplay">0</b>
                 </div>
-                <p class="text-white text-center font-bold">Ортём</p>
             </div>
-            <div class="skin-card bg-gray-800 border-4 border-transparent p-2 rounded-2xl cursor-pointer" data-skin="slavyan.png">
-                <div class="w-24 h-24 bg-gray-700 rounded-xl flex items-center justify-center overflow-hidden mb-2">
-                    <img src="slavyan.png" class="h-full object-contain" alt="Славян">
+
+            <div class="menu-actions">
+                <button id="btn-play" class="btn btn-primary btn-block">
+                    <svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5.5v13a1 1 0 0 0 1.5.86l10.5-6.5a1 1 0 0 0 0-1.72L9.5 4.64A1 1 0 0 0 8 5.5z"/></svg>
+                    Играть
+                </button>
+                <div class="btn-row">
+                    <button id="btn-skins" class="btn btn-glass">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8.5 3 3 5.5 4.8 9.5 8 8.4V20h8V8.4l3.2 1.1L21 5.5 15.5 3a3.6 3.6 0 0 1-7 0z"/></svg>
+                        Скины
+                    </button>
+                    <button id="btn-settings" class="btn btn-glass">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h8M18 7h2M4 17h2M12 17h8"/><circle cx="15" cy="7" r="2.5"/><circle cx="9" cy="17" r="2.5"/></svg>
+                        Настройки
+                    </button>
                 </div>
-                <p class="text-white text-center font-bold">Славян</p>
             </div>
-        </div>
-        <button id="btn-close-skins" class="bg-blue-500 w-3/4 max-w-[250px] text-white font-bold py-4 rounded-xl shadow border-b-4 border-blue-700 active:border-b-0 active:translate-y-1">
-            НАЗАД
-        </button>
-    </div>
-
-    <!-- Экран: Настройки -->
-    <div id="screen-settings" class="absolute inset-0 flex justify-center items-center bg-black/80 z-50 hidden backdrop-blur-sm">
-        <div class="bg-gray-900 p-6 rounded-3xl w-4/5 max-w-[300px] text-center shadow-2xl border-2 border-gray-700">
-            <h3 class="text-2xl font-black text-white mb-6">НАСТРОЙКИ</h3>
-            <div class="mb-4 text-left">
-                <label class="text-gray-300 font-bold mb-2 block">Музыка</label>
-                <input type="range" id="volMusic" min="0" max="1" step="0.1" value="0.5" class="w-full">
-            </div>
-            <div class="mb-8 text-left">
-                <label class="text-gray-300 font-bold mb-2 block">Звуки (Эффекты)</label>
-                <input type="range" id="volSfx" min="0" max="1" step="0.1" value="1" class="w-full">
-            </div>
-            <button id="btn-close-settings" class="bg-blue-500 w-full text-white font-bold py-3 rounded-xl shadow border-b-4 border-blue-700 active:border-b-0 active:translate-y-1">
-                ГОТОВО
-            </button>
         </div>
     </div>
 
-    <!-- Экран: Пауза -->
-    <div id="screen-pause" class="absolute inset-0 flex flex-col justify-center items-center bg-black/70 z-30 hidden backdrop-blur-sm">
-        <h2 class="text-4xl font-black text-white mb-6 drop-shadow-lg">ПАУЗА</h2>
-        
-        <div class="w-3/4 max-w-[280px] bg-black/50 p-4 rounded-2xl border border-white/20 mb-6 shadow-lg">
-            <label class="text-gray-300 font-bold mb-1 block text-sm">Музыка</label>
-            <input type="range" id="volMusicPause" min="0" max="1" step="0.1" value="0.5" class="w-full mb-3">
-            <label class="text-gray-300 font-bold mb-1 block text-sm">Звуки</label>
-            <input type="range" id="volSfxPause" min="0" max="1" step="0.1" value="1" class="w-full">
+    <!-- Скины -->
+    <div id="screen-skins" class="screen hidden">
+        <h3 class="skins-title">Выбор скина</h3>
+        <p class="skins-sub">Кого ловит сметанники сегодня?</p>
+        <div class="skin-grid">
+            <button type="button" class="skin-card active" data-skin="elisei.png">
+                <span class="skin-check"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></span>
+                <span class="skin-art"><img src="elisei.png" alt="Елисей"></span>
+                <span class="skin-name">Елисей</span>
+            </button>
+            <button type="button" class="skin-card" data-skin="greben.png">
+                <span class="skin-check"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></span>
+                <span class="skin-art"><img src="greben.png" onerror="this.onerror=null;this.src='greben.jpg'" alt="Ортём"></span>
+                <span class="skin-name">Ортём</span>
+            </button>
+            <button type="button" class="skin-card" data-skin="slavyan.png">
+                <span class="skin-check"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></span>
+                <span class="skin-art"><img src="slavyan.png" alt="Славян"></span>
+                <span class="skin-name">Славян</span>
+            </button>
         </div>
-
-        <div class="flex flex-col gap-4 w-3/4 max-w-[250px]">
-            <button id="btn-resume" class="btn-pulse bg-blue-500 text-white font-bold py-4 rounded-2xl shadow-lg border-b-4 border-blue-700 active:border-b-0 active:translate-y-1">
-                ПРОДОЛЖИТЬ
-            </button>
-            <button id="btn-quit" class="btn-pulse bg-red-500 text-white font-bold py-3 rounded-2xl shadow-lg border-b-4 border-red-700 active:border-b-0 active:translate-y-1">
-                В МЕНЮ
-            </button>
+        <div class="stack" style="max-width:260px">
+            <button id="btn-close-skins" class="btn btn-glass btn-block">Назад</button>
         </div>
     </div>
 
-    <!-- Экран: Game Over -->
-    <div id="screen-gameover" class="absolute inset-0 flex flex-col justify-center items-center bg-black/90 z-30 hidden">
-        <h2 class="text-5xl font-black text-red-500 mb-2 drop-shadow-lg uppercase">Игра окончена!</h2>
-        <p class="text-white text-xl mb-8">Собрано сметанников: <span id="finalScore" class="font-bold text-yellow-400 text-3xl block mt-2">0</span></p>
-        <div class="flex flex-col gap-4 w-3/4 max-w-[250px]">
-            <button id="btn-restart" class="btn-pulse bg-green-500 text-white font-bold py-4 rounded-2xl shadow-lg border-b-4 border-green-700 active:border-b-0 active:translate-y-1">
-                ИГРАТЬ СНОВА
-            </button>
-            <button id="btn-menu-from-go" class="btn-pulse bg-gray-600 text-white font-bold py-3 rounded-2xl shadow-lg border-b-4 border-gray-800 active:border-b-0 active:translate-y-1">
-                В ГЛАВНОЕ МЕНЮ
-            </button>
+    <!-- Настройки -->
+    <div id="screen-settings" class="screen hidden">
+        <div class="panel">
+            <h3 class="panel-title">Настройки</h3>
+            <div class="field">
+                <div class="field-row"><label for="volMusic">Музыка</label><span class="range-val"></span></div>
+                <input type="range" id="volMusic" min="0" max="1" step="0.1" value="0.5">
+            </div>
+            <div class="field" style="margin-bottom:28px">
+                <div class="field-row"><label for="volSfx">Звуки</label><span class="range-val"></span></div>
+                <input type="range" id="volSfx" min="0" max="1" step="0.1" value="1">
+            </div>
+            <button id="btn-close-settings" class="btn btn-violet btn-block">Готово</button>
+        </div>
+    </div>
+
+    <!-- Пауза -->
+    <div id="screen-pause" class="screen hidden">
+        <div class="panel">
+            <h2 class="panel-title">Пауза</h2>
+            <div class="field">
+                <div class="field-row"><label for="volMusicPause">Музыка</label><span class="range-val"></span></div>
+                <input type="range" id="volMusicPause" min="0" max="1" step="0.1" value="0.5">
+            </div>
+            <div class="field" style="margin-bottom:26px">
+                <div class="field-row"><label for="volSfxPause">Звуки</label><span class="range-val"></span></div>
+                <input type="range" id="volSfxPause" min="0" max="1" step="0.1" value="1">
+            </div>
+            <div class="stack">
+                <button id="btn-resume" class="btn btn-primary btn-block" style="font-size:16px;padding:18px 24px">
+                    <svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5.5v13a1 1 0 0 0 1.5.86l10.5-6.5a1 1 0 0 0 0-1.72L9.5 4.64A1 1 0 0 0 8 5.5z"/></svg>
+                    Продолжить
+                </button>
+                <button id="btn-quit" class="btn btn-danger btn-block">В меню</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Game Over -->
+    <div id="screen-gameover" class="screen hidden">
+        <div class="panel go-card">
+            <h2 class="go-title">Игра окончена</h2>
+            <p class="go-label">Собрано сметанников</p>
+            <span id="finalScore" class="go-score">0</span>
+            <div id="newRecord" class="new-record hidden">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M8 4h8v5a4 4 0 0 1-8 0V4zM8 6H4v1a4 4 0 0 0 4 4M16 6h4v1a4 4 0 0 1-4 4M12 13v4M8 20h8M10 17h4"/></svg>
+                Новый рекорд!
+            </div>
+            <p class="go-best">Лучший результат: <b id="goBest">0</b></p>
+            <div class="stack">
+                <button id="btn-restart" class="btn btn-primary btn-block" style="font-size:16px;padding:18px 24px">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 12a8.5 8.5 0 1 0 2.8-6.3L3.5 8.3M3.5 3.5v4.8h4.8"/></svg>
+                    Играть снова
+                </button>
+                <button id="btn-menu-from-go" class="btn btn-glass btn-block">В главное меню</button>
+            </div>
         </div>
     </div>
 </div>
@@ -200,14 +680,14 @@
     const ctx = canvas.getContext('2d');
     const container = document.getElementById('game-container');
 
-    // Функция переключения экранов (мем 67 теперь не затрагивается, интерфейс не ломается)
+    // Переключение экранов
     function showScreen(screenKey) {
         const allScreenIds = ['screen-menu', 'hud', 'screen-skins', 'screen-settings', 'screen-pause', 'screen-gameover'];
         allScreenIds.forEach(id => {
             const el = document.getElementById(id);
             if (el) el.classList.add('hidden');
         });
-        
+
         const map = {
             'menu': 'screen-menu',
             'hud': 'hud',
@@ -216,14 +696,15 @@
             'pause': 'screen-pause',
             'gameOver': 'screen-gameover'
         };
-        
+
         if (map[screenKey]) {
             document.getElementById(map[screenKey]).classList.remove('hidden');
         }
     }
 
     // --- РЕКОРД ---
-    let highScore = localStorage.getItem('smetannikHighScore') || 0;
+    let highScore = 0;
+    try { highScore = parseInt(localStorage.getItem('smetannikHighScore'), 10) || 0; } catch (e) { }
     document.getElementById('highScoreDisplay').innerText = highScore;
 
     // --- ЗВУКИ ---
@@ -245,8 +726,16 @@
         sp: document.getElementById('volSfxPause')
     };
 
+    // Закрашивает дорожку слайдера и показывает процент
+    function paintRange(el) {
+        const p = ((el.value - el.min) / (el.max - el.min)) * 100;
+        el.style.setProperty('--p', p + '%');
+        const v = el.parentElement.querySelector('.range-val');
+        if (v) v.textContent = Math.round(el.value * 100) + '%';
+    }
+
     function updateVolumes(source) {
-        if(source === 'main') {
+        if (source === 'main') {
             volSettings.music = parseFloat(els.m.value);
             volSettings.sfx = parseFloat(els.s.value);
             els.mp.value = volSettings.music;
@@ -258,8 +747,9 @@
             els.s.value = volSettings.sfx;
         }
         audioMusic.volume = volSettings.music;
+        Object.values(els).forEach(paintRange);
     }
-    
+
     els.m.addEventListener('input', () => updateVolumes('main'));
     els.s.addEventListener('input', () => updateVolumes('main'));
     els.mp.addEventListener('input', () => updateVolumes('pause'));
@@ -267,10 +757,10 @@
     updateVolumes('main');
 
     function playSfx(key) {
-        if(volSettings.sfx > 0) {
+        if (volSettings.sfx > 0) {
             let snd = new Audio(audioSfx[key]);
             snd.volume = volSettings.sfx;
-            snd.play().catch(()=>{});
+            snd.play().catch(() => {});
         }
     }
 
@@ -282,17 +772,18 @@
     let gameLoopId;
     let isPlaying = false;
     let isPaused = false;
-    
+
     let collectedSmetanniks = 0;
     let collectedTomatoes = 0;
     let lives = 3;
     let frameCount = 0;
     let lastOliveFrame = 0;
     let meme67Shown = false;
-    
+
     const player = { w: 0, h: 0, x: 0, y: 0 };
     let items = [];
     let particles = [];
+    let popups = [];
 
     // --- ГРАФИКА И СКИНЫ ---
     const assets = {
@@ -304,7 +795,7 @@
         tomat: { img: new Image(), loaded: false },
         olive: { img: new Image(), loaded: false }
     };
-    
+
     assets.bgMobile.img.src = 'stolovka.jpg';
     assets.bgMobile.img.onload = () => assets.bgMobile.loaded = true;
     assets.bgPc.img.src = 'stolovkapc.jpg';
@@ -318,21 +809,21 @@
         assets.player.loaded = false;
         assets.player.img.src = filename;
         assets.player.img.onerror = () => {
-            if(filename === 'greben.png') assets.player.img.src = 'greben.jpg';
+            if (filename === 'greben.png') assets.player.img.src = 'greben.jpg';
         };
         assets.player.img.onload = () => {
             assets.player.loaded = true;
-            resizeCanvas(); 
+            resizeCanvas();
             // Принудительно рисуем фон после изменения размера, чтобы не было черного экрана в меню
-            if (!isPlaying) draw(); 
+            if (!isPlaying) draw();
         };
     }
     loadSkin(currentSkin);
 
     document.querySelectorAll('.skin-card').forEach(card => {
-        card.addEventListener('click', function() {
-            document.querySelectorAll('.skin-card').forEach(c => c.classList.replace('border-yellow-400', 'border-transparent'));
-            this.classList.replace('border-transparent', 'border-yellow-400');
+        card.addEventListener('click', function () {
+            document.querySelectorAll('.skin-card').forEach(c => c.classList.remove('active'));
+            this.classList.add('active');
             currentSkin = this.getAttribute('data-skin');
             loadSkin(currentSkin);
         });
@@ -350,17 +841,16 @@
     btnNasevich.addEventListener('click', () => {
         nasevichMode = !nasevichMode;
         btnNasevich.innerText = nasevichMode ? "ВЫКЛЮЧИТЬ НАСЕВИЧА" : "ВКЛЮЧИТЬ НАСЕВИЧА";
-        if(nasevichMode) btnNasevich.classList.replace('text-white/30', 'text-yellow-400');
-        else btnNasevich.classList.replace('text-yellow-400', 'text-white/30');
-        draw(); 
+        btnNasevich.classList.toggle('on', nasevichMode);
+        draw();
     });
 
     function resizeCanvas() {
         canvas.width = container.clientWidth;
         canvas.height = container.clientHeight;
-        
+
         player.h = Math.min(250, canvas.height * 0.22);
-        
+
         if (assets.player.loaded && assets.player.img.height) {
             player.w = player.h * (assets.player.img.width / assets.player.img.height);
         } else {
@@ -383,16 +873,15 @@
         targetX = clientX - rect.left;
     }
     canvas.addEventListener('mousemove', handleMove);
-    canvas.addEventListener('touchmove', (e) => { if(e.cancelable) e.preventDefault(); handleMove(e); }, { passive: false });
+    canvas.addEventListener('touchmove', (e) => { if (e.cancelable) e.preventDefault(); handleMove(e); }, { passive: false });
     canvas.addEventListener('mousedown', handleMove);
     canvas.addEventListener('touchstart', handleMove, { passive: false });
 
+    const PARTICLE_COLORS = { smetannik: '#ffe58a', tomat: '#ff5a52', olive: '#b7d65a' };
+
     function spawnParticles(x, y, type) {
-        let color = '#fef08a';
-        if (type === 'tomat') color = '#ef4444';
-        if (type === 'olive') color = '#111827'; 
-        
-        for(let i=0; i<15; i++) {
+        const color = PARTICLE_COLORS[type] || '#ffe58a';
+        for (let i = 0; i < 16; i++) {
             particles.push({
                 x: x, y: y,
                 vx: (Math.random() - 0.5) * 10,
@@ -403,34 +892,70 @@
         }
     }
 
+    function spawnPopup(x, y, text, color) {
+        popups.push({ x: x, y: y, text: text, color: color, life: 1.0 });
+    }
+
+    // --- HUD ---
+    const HEART = '<svg class="heart" viewBox="0 0 24 24"><path d="M12 21s-7.5-4.6-9.6-9.2C.9 8.4 2.7 4.5 6.4 4.5c2 0 3.5 1 5.6 3.1 2.1-2.1 3.6-3.1 5.6-3.1 3.7 0 5.5 3.9 4 7.3C19.5 16.4 12 21 12 21z"/></svg>';
+    const hudEls = {
+        s: document.getElementById('smetannikCount'),
+        t: document.getElementById('tomatCount'),
+        chipS: document.getElementById('chipS'),
+        chipT: document.getElementById('chipT'),
+        lives: document.getElementById('livesDisplay')
+    };
+    let prevHud = { s: 0, t: 0, l: 3 };
+
+    function bump(el, cls) {
+        el.classList.remove(cls);
+        void el.offsetWidth;
+        el.classList.add(cls);
+    }
+
+    function updateHUD() {
+        hudEls.s.innerText = collectedSmetanniks;
+        hudEls.t.innerText = collectedTomatoes;
+
+        const n = Math.max(0, lives);
+        hudEls.lives.innerHTML = n <= 5 ? HEART.repeat(n) : HEART + '<span class="lives-x">×' + n + '</span>';
+
+        if (collectedSmetanniks !== prevHud.s) bump(hudEls.chipS, 'bump');
+        if (collectedTomatoes !== prevHud.t) bump(hudEls.chipT, 'bump');
+        if (lives < prevHud.l) bump(hudEls.lives, 'hit');
+        else if (lives > prevHud.l) bump(hudEls.lives, 'gain');
+        prevHud = { s: collectedSmetanniks, t: collectedTomatoes, l: lives };
+    }
+
     function initGame() {
         collectedSmetanniks = 0;
         collectedTomatoes = 0;
         lives = 3;
         items = [];
         particles = [];
+        popups = [];
         frameCount = 0;
         lastOliveFrame = 0;
         meme67Shown = false;
         player.x = canvas.width / 2 - player.w / 2;
-        targetX = player.x + player.w/2;
+        targetX = player.x + player.w / 2;
         updateHUD();
     }
 
     function spawnItem() {
-        const baseSpeed = 2.5 + (collectedSmetanniks / 40); 
+        const baseSpeed = 2.5 + (collectedSmetanniks / 40);
         const size = Math.min(60, canvas.width * 0.15);
-        
+
         let type = 'smetannik';
         let r = Math.random();
-        
+
         if (r > 0.95 && frameCount - lastOliveFrame > 400) {
             type = 'olive';
             lastOliveFrame = frameCount;
         } else if (r > 0.80) {
             type = 'tomat';
         }
-        
+
         let newX = 0;
         let isValidPosition = false;
 
@@ -443,21 +968,22 @@
                     break;
                 }
             }
-            if (isValidPosition) break; 
+            if (isValidPosition) break;
         }
 
         let itemW = size;
         let itemH = size;
         if (type === 'olive' && assets.olive.loaded && assets.olive.img.width) {
             let aspect = assets.olive.img.width / assets.olive.img.height;
-            itemH = itemW / aspect; 
+            itemH = itemW / aspect;
         }
 
         items.push({
             x: newX, y: -itemH,
             w: itemW, h: itemH,
             speed: baseSpeed + (Math.random() * 1.5),
-            type: type
+            type: type,
+            phase: Math.random() * Math.PI * 2
         });
     }
 
@@ -499,19 +1025,24 @@
                 item.y < hitY + hitH &&
                 item.y + item.h > hitY
             ) {
+                const cx = item.x + item.w / 2;
+                const cy = item.y + item.h / 2;
                 if (item.type === 'smetannik') {
                     collectedSmetanniks++;
+                    spawnPopup(cx, cy, '+1', '#ffe58a');
                 } else if (item.type === 'olive') {
                     lives++;
                     playSfx('maslina');
                     vibrate([100, 50, 100]);
-                    spawnParticles(item.x + item.w/2, item.y + item.h/2, 'olive');
+                    spawnParticles(cx, cy, 'olive');
+                    spawnPopup(cx, cy, '+1 ❤', '#b7d65a');
                 } else {
                     collectedTomatoes++;
                     lives--;
-                    playSfx('brosok'); 
-                    vibrate(100); 
-                    spawnParticles(item.x + item.w/2, item.y + item.h/2, 'tomat');
+                    playSfx('brosok');
+                    vibrate(100);
+                    spawnParticles(cx, cy, 'tomat');
+                    spawnPopup(cx, cy, '−1 ❤', '#ff7b73');
                 }
                 items.splice(i, 1);
                 updateHUD();
@@ -520,13 +1051,15 @@
             }
 
             if (item.y > canvas.height) {
+                const cx = item.x + item.w / 2;
                 if (item.type === 'smetannik') {
                     lives--;
                     playSfx('error');
-                    vibrate([50, 50, 50]); 
-                    spawnParticles(item.x + item.w/2, canvas.height, 'smetannik');
+                    vibrate([50, 50, 50]);
+                    spawnParticles(cx, canvas.height, 'smetannik');
+                    spawnPopup(Math.min(Math.max(cx, 40), canvas.width - 40), canvas.height - 50, '−1 ❤', '#ff7b73');
                 } else {
-                    spawnParticles(item.x + item.w/2, canvas.height, item.type);
+                    spawnParticles(cx, canvas.height, item.type);
                 }
                 items.splice(i, 1);
                 updateHUD();
@@ -542,61 +1075,108 @@
             p.life -= 0.03;
             if (p.life <= 0) particles.splice(i, 1);
         }
+
+        for (let i = popups.length - 1; i >= 0; i--) {
+            let p = popups[i];
+            p.y -= 1.3;
+            p.life -= 0.02;
+            if (p.life <= 0) popups.splice(i, 1);
+        }
     }
 
+    const ITEM_GLOW = {
+        smetannik: 'rgba(255, 225, 130, 0.85)',
+        olive: 'rgba(183, 214, 90, 0.8)',
+        tomat: 'rgba(255, 90, 82, 0.85)'
+    };
+
     function draw() {
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
-        
-        let activeBg = (canvas.width > 768 && assets.bgPc.loaded) ? assets.bgPc : assets.bgMobile;
+        const W = canvas.width, H = canvas.height;
+        ctx.clearRect(0, 0, W, H);
+
+        let activeBg = (W > 768 && assets.bgPc.loaded) ? assets.bgPc : assets.bgMobile;
 
         if (nasevichMode && assets.nasevich.loaded) {
-            ctx.drawImage(assets.nasevich.img, 0, 0, canvas.width, canvas.height);
+            ctx.drawImage(assets.nasevich.img, 0, 0, W, H);
         } else if (activeBg.loaded) {
-            ctx.drawImage(activeBg.img, 0, 0, canvas.width, canvas.height);
+            ctx.drawImage(activeBg.img, 0, 0, W, H);
         } else {
-            ctx.fillStyle = '#4a5568';
-            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            ctx.fillStyle = '#2a1f3a';
+            ctx.fillRect(0, 0, W, H);
         }
 
-        ctx.fillStyle = 'rgba(0, 0, 0, 0.4)';
-        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        // Затемнение + виньетка
+        const shade = ctx.createLinearGradient(0, 0, 0, H);
+        shade.addColorStop(0, 'rgba(23, 16, 31, 0.55)');
+        shade.addColorStop(0.5, 'rgba(23, 16, 31, 0.25)');
+        shade.addColorStop(1, 'rgba(23, 16, 31, 0.6)');
+        ctx.fillStyle = shade;
+        ctx.fillRect(0, 0, W, H);
 
+        const vig = ctx.createRadialGradient(W / 2, H / 2, Math.min(W, H) * 0.3, W / 2, H / 2, Math.max(W, H) * 0.8);
+        vig.addColorStop(0, 'rgba(0, 0, 0, 0)');
+        vig.addColorStop(1, 'rgba(0, 0, 0, 0.45)');
+        ctx.fillStyle = vig;
+        ctx.fillRect(0, 0, W, H);
+
+        // Тень под игроком
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.35)';
+        ctx.beginPath();
+        ctx.ellipse(player.x + player.w / 2, player.y + player.h - 2, player.w * 0.38, 9, 0, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Игрок
         ctx.save();
-        ctx.shadowColor = 'rgba(255, 255, 255, 0.5)';
-        ctx.shadowBlur = 10;
+        ctx.shadowColor = 'rgba(255, 233, 168, 0.45)';
+        ctx.shadowBlur = 18;
         if (assets.player.loaded) {
             ctx.drawImage(assets.player.img, player.x, player.y, player.w, player.h);
         } else {
-            ctx.fillStyle = '#3182ce';
+            ctx.fillStyle = '#6a54f0';
             ctx.fillRect(player.x, player.y, player.w, player.h);
         }
         ctx.restore();
 
+        // Предметы (чуть покачиваются в падении)
         for (let item of items) {
+            const a = assets[item.type];
             ctx.save();
-            if (item.type === 'smetannik') {
-                ctx.shadowColor = 'rgba(252, 211, 77, 0.8)';
-                ctx.shadowBlur = 15;
-                if (assets.smetannik.loaded) ctx.drawImage(assets.smetannik.img, item.x, item.y, item.w, item.h);
-            } else if (item.type === 'olive') {
-                ctx.shadowColor = 'rgba(0, 0, 0, 0.8)';
-                ctx.shadowBlur = 15;
-                if (assets.olive.loaded) ctx.drawImage(assets.olive.img, item.x, item.y, item.w, item.h);
-            } else {
-                ctx.shadowColor = 'rgba(239, 68, 68, 0.8)';
-                ctx.shadowBlur = 15;
-                if (assets.tomat.loaded) ctx.drawImage(assets.tomat.img, item.x, item.y, item.w, item.h);
-            }
+            ctx.shadowColor = ITEM_GLOW[item.type];
+            ctx.shadowBlur = 18;
+            ctx.translate(item.x + item.w / 2, item.y + item.h / 2);
+            ctx.rotate(Math.sin(frameCount * 0.05 + item.phase) * 0.18);
+            if (a.loaded) ctx.drawImage(a.img, -item.w / 2, -item.h / 2, item.w, item.h);
             ctx.restore();
         }
 
+        // Частицы
+        ctx.save();
+        ctx.globalCompositeOperation = 'lighter';
         for (let p of particles) {
-            ctx.globalAlpha = p.life;
+            ctx.globalAlpha = Math.max(0, p.life);
             ctx.fillStyle = p.color;
             ctx.beginPath();
-            ctx.arc(p.x, p.y, 4, 0, Math.PI * 2);
+            ctx.arc(p.x, p.y, 2 + 4 * p.life, 0, Math.PI * 2);
             ctx.fill();
         }
+        ctx.restore();
+
+        // Всплывающие очки
+        ctx.save();
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.font = '800 22px Unbounded, system-ui, sans-serif';
+        ctx.lineJoin = 'round';
+        ctx.lineWidth = 5;
+        for (let p of popups) {
+            ctx.globalAlpha = Math.max(0, Math.min(1, p.life * 1.5));
+            ctx.strokeStyle = 'rgba(23, 16, 31, 0.85)';
+            ctx.strokeText(p.text, p.x, p.y);
+            ctx.fillStyle = p.color;
+            ctx.fillText(p.text, p.x, p.y);
+        }
+        ctx.restore();
+
         ctx.globalAlpha = 1.0;
     }
 
@@ -606,25 +1186,19 @@
         if (isPlaying) gameLoopId = requestAnimationFrame(loop);
     }
 
-    function updateHUD() {
-        document.getElementById('smetannikCount').innerText = collectedSmetanniks;
-        document.getElementById('tomatCount').innerText = collectedTomatoes;
-        document.getElementById('livesDisplay').innerText = '❤️'.repeat(Math.max(0, lives));
-    }
-
     function startGame() {
         initGame();
         isPlaying = true;
         isPaused = false;
         showScreen('hud');
-        if(volSettings.music > 0) audioMusic.play().catch(()=>{});
+        if (volSettings.music > 0) audioMusic.play().catch(() => {});
         loop();
     }
 
     function pauseGame() {
         if (!isPlaying || isPaused) return;
         isPaused = true;
-        audioMusic.pause(); 
+        audioMusic.pause();
         showScreen('pause');
     }
 
@@ -632,28 +1206,30 @@
         if (!isPlaying || !isPaused) return;
         isPaused = false;
         showScreen('hud');
-        targetX = player.x + player.w/2;
-        if(volSettings.music > 0) audioMusic.play().catch(()=>{});
+        targetX = player.x + player.w / 2;
+        if (volSettings.music > 0) audioMusic.play().catch(() => {});
     }
 
     function gameOver() {
         isPlaying = false;
         cancelAnimationFrame(gameLoopId);
-        
-        try {
-            if (collectedSmetanniks > highScore) {
-                highScore = collectedSmetanniks;
-                localStorage.setItem('smetannikHighScore', highScore);
-                document.getElementById('highScoreDisplay').innerText = highScore;
-            }
-        } catch(e) { } 
+
+        let isNewRecord = false;
+        if (collectedSmetanniks > highScore) {
+            isNewRecord = true;
+            highScore = collectedSmetanniks;
+            try { localStorage.setItem('smetannikHighScore', highScore); } catch (e) { }
+            document.getElementById('highScoreDisplay').innerText = highScore;
+        }
 
         document.getElementById('finalScore').innerText = collectedSmetanniks;
-        
+        document.getElementById('goBest').innerText = highScore;
+        document.getElementById('newRecord').classList.toggle('hidden', !isNewRecord);
+
         audioMusic.pause();
         audioMusic.currentTime = 0;
         playSfx('over');
-        
+
         showScreen('gameOver');
     }
 
@@ -663,23 +1239,23 @@
         cancelAnimationFrame(gameLoopId);
         audioMusic.pause();
         audioMusic.currentTime = 0;
-        initGame(); 
-        draw(); 
-        showScreen('menu'); 
+        initGame();
+        draw();
+        showScreen('menu');
     }
 
     // ПРИВЯЗКИ КНОПОК
     document.getElementById('btn-play').addEventListener('click', startGame);
     document.getElementById('btn-skins').addEventListener('click', () => showScreen('skins'));
     document.getElementById('btn-close-skins').addEventListener('click', () => { showScreen('menu'); draw(); });
-    
+
     document.getElementById('btn-settings').addEventListener('click', () => showScreen('settings'));
     document.getElementById('btn-close-settings').addEventListener('click', () => showScreen('menu'));
-    
+
     document.getElementById('btn-pause').addEventListener('click', pauseGame);
     document.getElementById('btn-resume').addEventListener('click', resumeGame);
     document.getElementById('btn-quit').addEventListener('click', quitToMenu);
-    
+
     document.getElementById('btn-restart').addEventListener('click', startGame);
     document.getElementById('btn-menu-from-go').addEventListener('click', quitToMenu);
 
