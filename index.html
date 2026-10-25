@@ -282,17 +282,17 @@
         .skins-sub { margin: 0 0 22px; color: var(--muted); font-weight: 700; font-size: 14px; text-align: center; }
 
         .skin-grid {
-            display: flex; gap: 14px; justify-content: safe center;
-            width: 100%; max-width: 100vw;
-            padding: 14px 20px 22px; margin-bottom: 8px;
-            overflow-x: auto; scroll-snap-type: x mandatory; touch-action: pan-x; scrollbar-width: none;
+            display: flex; flex-wrap: wrap; gap: 20px 14px; justify-content: center;
+            width: 100%; max-width: 460px;
+            max-height: min(62vh, 560px);
+            padding: 16px 4px 20px; margin-bottom: 8px;
+            overflow-y: auto; touch-action: pan-y; scrollbar-width: none;
         }
         .skin-grid::-webkit-scrollbar { display: none; }
 
         .skin-card {
             position: relative; flex: 0 0 auto;
-            width: clamp(100px, 27vw, 124px); padding: 10px 10px 12px;
-            scroll-snap-align: center;
+            width: clamp(88px, 25vw, 124px); padding: 8px 8px 10px;
             color: var(--text);
             background: var(--glass);
             border: 2px solid var(--stroke); border-radius: 24px;
@@ -574,7 +574,7 @@
                 </div>
                 <button id="btn-stats" class="btn btn-glass btn-block">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l2.6 5.6 6.1.7-4.5 4.2 1.2 6L12 16.5 6.6 19.5l1.2-6L3.3 9.3l6.1-.7z"/></svg>
-                    Достижения <span id="achBadge" class="badge">0/12</span>
+                    Достижения <span id="achBadge" class="badge">0/13</span>
                 </button>
             </div>
         </div>
@@ -599,6 +599,26 @@
                 <span class="skin-check"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></span>
                 <span class="skin-art"><img src="slavyan.png" alt="Славян"></span>
                 <span class="skin-name">Славян</span>
+            </button>
+            <button type="button" class="skin-card" data-skin="senka.png">
+                <span class="skin-check"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></span>
+                <span class="skin-art"><img src="senka.png" alt="Сенька"></span>
+                <span class="skin-name">Сенька</span>
+            </button>
+            <button type="button" class="skin-card" data-skin="kuzoku.png">
+                <span class="skin-check"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></span>
+                <span class="skin-art"><img src="kuzoku.png" alt="Кузоку"></span>
+                <span class="skin-name">Кузоку</span>
+            </button>
+            <button type="button" class="skin-card" data-skin="artem.png">
+                <span class="skin-check"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></span>
+                <span class="skin-art"><img src="artem.png" alt="Артём"></span>
+                <span class="skin-name">Артём</span>
+            </button>
+            <button type="button" class="skin-card" data-skin="timofei.png">
+                <span class="skin-check"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></span>
+                <span class="skin-art"><img src="timofei.png" alt="Тимофей"></span>
+                <span class="skin-name">Тимофей</span>
             </button>
         </div>
         <div class="stack" style="max-width:260px">
@@ -639,7 +659,7 @@
         <div class="panel panel-wide">
             <h3 class="panel-title">Достижения</h3>
             <div id="statGrid" class="stat-grid"></div>
-            <div class="ach-head"><span>Награды</span><span id="achCount">0/12</span></div>
+            <div class="ach-head"><span>Награды</span><span id="achCount">0/13</span></div>
             <ul id="achList" class="ach-list"></ul>
             <button id="btn-close-stats" class="btn btn-violet btn-block">Готово</button>
         </div>
@@ -879,7 +899,11 @@ const KNOWN_TRIMS = {
     '360x239': [88, 28, 195, 193],   // маслина
     '640x494': [0, 5, 563, 489],     // скин
     '497x502': [102, 31, 395, 471],  // скин
-    '594x542': [0, 4, 592, 538]      // скин
+    '594x542': [0, 4, 592, 538],     // скин
+    '300x361': [3, 9, 289, 340],     // скин
+    '360x536': [7, 20, 345, 516],    // скин
+    '382x654': [0, 31, 382, 623],    // скин
+    '375x541': [9, 18, 336, 523]     // скин
 };
 
 const IMG = {};
@@ -939,7 +963,11 @@ function loadImg(name, srcs, trim) {
 const SKIN_FILES = {
     'elisei.png': ['elisei.png'],
     'greben.png': ['greben.png', 'greben.jpg'],
-    'slavyan.png': ['slavyan.png']
+    'slavyan.png': ['slavyan.png'],
+    'senka.png': ['senka.png'],
+    'kuzoku.png': ['kuzoku.png'],
+    'artem.png': ['artem.png'],
+    'timofei.png': ['timofei.png']
 };
 if (!SKIN_FILES[currentSkin]) currentSkin = 'elisei.png';
 
@@ -1042,7 +1070,8 @@ const ACH = [
     { id: 'saved',   icon: '🛡️', title: 'Под защитой',        desc: 'Спаси жизнь с помощью щита',            test: () => run.shieldSaves >= 1 },
     { id: 'survive', icon: '⏱️', title: 'Выживший',           desc: 'Продержись 3 минуты',                   test: () => run.time >= 180 },
     { id: 'lvl5',    icon: '🚀', title: 'Пятый уровень',      desc: 'Доберись до 5 уровня',                  test: () => run.level >= 5 },
-    { id: 'fashion', icon: '👕', title: 'Модник',             desc: 'Сыграй за всех трёх героев',            test: () => skinsUsed.length >= 3 }
+    { id: 'fashion', icon: '👕', title: 'Модник',             desc: 'Сыграй за трёх разных героев',          test: () => skinsUsed.length >= 3 },
+    { id: 'collect', icon: '🎭', title: 'Коллекционер',       desc: 'Сыграй за всех героев',                 test: () => skinsUsed.length >= Object.keys(SKIN_FILES).length }
 ];
 
 function checkAchievements() {
@@ -1393,9 +1422,12 @@ function updatePlayer(dt) {
     player.x += (targetX - player.w / 2 - player.x) * k;
     player.vx = (player.x - prevX) / Math.max(dt, 0.001);
     player.tilt = lerp(player.tilt, clamp(player.vx / 2600, -0.14, 0.14), Math.min(1, dt * 12));
+    // Ширина зоны ловли: как раньше (46% ширины), но не уже 38% высоты героя,
+    // чтобы узкие портреты в рост не были сложнее широких
+    const hitW = Math.min(player.w * 0.9, Math.max(player.w * 0.46, player.h * 0.38));
     player.hit = {
-        x: player.x + player.w * 0.27,
-        w: player.w * 0.46,
+        x: player.x + player.w / 2 - hitW / 2,
+        w: hitW,
         y: player.y + player.h * 0.06,
         h: player.h * 0.94
     };
