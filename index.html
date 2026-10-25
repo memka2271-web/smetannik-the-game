@@ -462,6 +462,16 @@
             100% { transform: translate(1px, -2px) rotate(-3deg) scale(1); }
         }
 
+        /* Производительность: размытие фона под HUD пересчитывается каждый кадр игры (канвас живой),
+           на телефонах и в Telegram это главный источник лагов. Заменено на плотный полупрозрачный фон. */
+        .hud .chip, .hud .combo, .hud .power, .hud .level-pill, .hud .icon-btn, .cd-hint {
+            -webkit-backdrop-filter: none;
+            backdrop-filter: none;
+            background: rgba(28, 18, 40, 0.74);
+        }
+        .floater { will-change: transform; }
+        .hud, #countdown, #banner, #toasts { contain: layout style; }
+
         @media (prefers-reduced-motion: reduce) {
             .floater { animation: none; }
             .screen:not(.hidden) { animation: none; }
@@ -751,9 +761,27 @@ audioMusic.loop = true;
 
 const SFX_FILES = { brosok: 'brosok.mp3', error: 'error.mp3', over: 'over.mp3', maslina: 'maslina.mp3' };
 
+// Пул готовых элементов Audio: не создаём и не декодируем mp3 заново при каждом звуке
+const sfxPool = {};
+function getSfxPool(key) {
+    let pool = sfxPool[key];
+    if (!pool) {
+        pool = sfxPool[key] = [];
+        for (let i = 0; i < 3; i++) {
+            const a = new Audio(SFX_FILES[key]);
+            a.preload = 'auto';
+            pool.push(a);
+        }
+    }
+    return pool;
+}
+function preloadSfx() { Object.keys(SFX_FILES).forEach(getSfxPool); }
+
 function playSfx(key) {
     if (settings.sfx <= 0 || !SFX_FILES[key]) return;
-    const snd = new Audio(SFX_FILES[key]);
+    const pool = getSfxPool(key);
+    const snd = pool.find((a) => a.paused || a.ended) || pool[0];
+    try { snd.currentTime = 0; } catch (e) { /* ещё не загружен */ }
     snd.volume = settings.sfx;
     snd.play().catch(() => {});
 }
@@ -940,6 +968,7 @@ const POWER_INFO = {
 const SIZE_MUL = { smetannik: 1.15, golden: 1.3, tomat: 0.95, olive: 0.8, magnet: 0.95, slow: 0.95, shield: 0.95 };
 
 let W = 0, H = 0, dpr = 1;
+let dprCap = Math.min(2, Math.max(1, Number(store.get('smetannikDprCap', 2)) || 2));
 let state = 'loading';          // loading | menu | countdown | playing | paused | dying | gameover
 let nasevichMode = false;
 let run = null;
@@ -1031,10 +1060,10 @@ function setTargetFromEvent(e) {
 }
 canvas.addEventListener('pointermove', (e) => {
     if (state === 'playing' || state === 'countdown') setTargetFromEvent(e);
-});
+}, { passive: true });
 canvas.addEventListener('pointerdown', (e) => {
     if (state === 'playing' || state === 'countdown') setTargetFromEvent(e);
-});
+}, { passive: true });
 
 window.addEventListener('keydown', (e) => {
     const k = e.code;
@@ -1059,7 +1088,7 @@ let gradShade = null, gradVig = null, gradDmg = null;
 function resizeCanvas() {
     W = container.clientWidth;
     H = container.clientHeight;
-    dpr = Math.min(2, window.devicePixelRatio || 1);
+    dpr = Math.min(dprCap, window.devicePixelRatio || 1);
     canvas.width = Math.round(W * dpr);
     canvas.height = Math.round(H * dpr);
     layoutPlayer();
@@ -1440,62 +1469,194 @@ function step(dt) {
     }
 }
 
-// ---------- Отрисовка ----------
-function drawCover(rec, fxp, fyp, zoom, parallax) {
-    const img = rec.img;
-    const iw = img.naturalWidth, ih = img.naturalHeight;
-    const s = Math.max(W / iw, H / ih) * zoom;
-    const dw = iw * s, dh = ih * s;
-    const x = clamp((W - dw) * (fxp + parallax), W - dw, 0);
-    const y = clamp((H - dh) * fyp, H - dh, 0);
-    ctx.drawImage(img, x, y, dw, dh);
+// ---------- Кэши отрисовки ----------
+// Свечения (shadowBlur), масштабирование фона и градиенты — самое дорогое в кадре на телефоне.
+// Всё это один раз «запекается» в отдельные канвасы, а в кадре остаётся только drawImage.
+const cache = { key: '', bgKey: '', bg: null, bgDw: 0, bgDh: 0, overlay: null, items: {}, orbs: {}, player: null };
+
+function mk(w, h) {
+    const c = document.createElement('canvas');
+    c.width = Math.max(1, Math.ceil(w));
+    c.height = Math.max(1, Math.ceil(h));
+    return c;
 }
 
-function drawBackground() {
-    let rec = null;
-    let fxp = 0.5, fyp = 0.5;
-    if (nasevichMode && R('nasevich').loaded) { rec = R('nasevich'); fxp = 0.8; fyp = 0.62; }
-    else {
-        const portrait = H >= W;
-        rec = portrait ? R('bgMobile') : R('bgPc');
-        if (!rec.loaded) rec = R('bgMobile').loaded ? R('bgMobile') : R('bgPc');
+function loadedCount() {
+    let n = 0;
+    for (const k in IMG) if (IMG[k].loaded) n++;
+    return n;
+}
+
+function itemDims(kind) {
+    const size = clamp(W * 0.14, 46, 72) * SIZE_MUL[kind];
+    let w = size, h = size;
+    const rec = spriteFor(kind);
+    if (rec && rec.loaded && rec.trim) {
+        const aspect = rec.trim.w / rec.trim.h;
+        if (aspect >= 1) { w = size; h = size / aspect; }
+        else { h = size; w = size * aspect; }
     }
-    if (!rec.loaded) {
+    return { size, w, h };
+}
+
+// src = { img, x, y, w, h } — исходный прямоугольник; cssW/cssH — размер на экране
+function bakeSprite(src, cssW, cssH, color, blur, split) {
+    const pad = Math.ceil(blur * 1.6);
+    const pw = Math.max(1, Math.round(cssW * dpr));
+    const ph = Math.max(1, Math.round(cssH * dpr));
+    const out = { w: cssW, h: cssH, padCss: pad / dpr };
+
+    const c = mk(pw + pad * 2, ph + pad * 2);
+    const g = c.getContext('2d');
+    g.imageSmoothingQuality = 'high';
+    g.shadowColor = color;
+    g.shadowBlur = blur;
+    g.drawImage(src.img, src.x, src.y, src.w, src.h, pad, pad, pw, ph);
+
+    if (split) {
+        // Гало отдельно от картинки: вырезаем саму картинку, остаётся только свечение
+        g.shadowColor = 'transparent';
+        g.shadowBlur = 0;
+        g.globalCompositeOperation = 'destination-out';
+        g.drawImage(src.img, src.x, src.y, src.w, src.h, pad, pad, pw, ph);
+        out.halo = c;
+        const p = mk(pw, ph);
+        const pg = p.getContext('2d');
+        pg.imageSmoothingQuality = 'high';
+        pg.drawImage(src.img, src.x, src.y, src.w, src.h, 0, 0, pw, ph);
+        out.plain = p;
+    } else {
+        out.c = c;
+    }
+    return out;
+}
+
+function bakeOrb(kind, cssSize) {
+    const info = POWER_INFO[kind];
+    const blur = 22;
+    const pad = Math.ceil(blur * 1.6);
+    const pr = (cssSize / 2) * dpr;
+    const c = mk(pr * 2 + pad * 2, pr * 2 + pad * 2);
+    const g = c.getContext('2d');
+    g.translate(c.width / 2, c.height / 2);
+    g.shadowColor = info.glow;
+    g.shadowBlur = blur;
+    const grad = g.createRadialGradient(-pr * 0.3, -pr * 0.35, pr * 0.1, 0, 0, pr);
+    grad.addColorStop(0, 'rgba(255, 255, 255, 0.95)');
+    grad.addColorStop(0.45, info.fill);
+    grad.addColorStop(1, 'rgba(30, 20, 50, 0.92)');
+    g.fillStyle = grad;
+    g.beginPath();
+    g.arc(0, 0, pr, 0, Math.PI * 2);
+    g.fill();
+    g.shadowBlur = 0;
+    g.strokeStyle = 'rgba(255, 255, 255, 0.75)';
+    g.lineWidth = 2 * dpr;
+    g.stroke();
+    g.font = Math.round(pr * 1.15) + 'px system-ui, "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", sans-serif';
+    g.textAlign = 'center';
+    g.textBaseline = 'middle';
+    g.fillStyle = '#fff';
+    g.fillText(info.icon, 0, pr * 0.06);
+    return { c, w: cssSize, h: cssSize, padCss: pad / dpr };
+}
+
+function bakeOverlay() {
+    // Затемнение + виньетка одним слоем (с запасом 20px на тряску экрана)
+    const c = mk((W + 40) * dpr, (H + 40) * dpr);
+    const g = c.getContext('2d');
+    g.setTransform(dpr, 0, 0, dpr, 20 * dpr, 20 * dpr);
+    const shade = g.createLinearGradient(0, 0, 0, H);
+    shade.addColorStop(0, 'rgba(23, 16, 31, 0.55)');
+    shade.addColorStop(0.5, 'rgba(23, 16, 31, 0.22)');
+    shade.addColorStop(1, 'rgba(23, 16, 31, 0.6)');
+    g.fillStyle = shade;
+    g.fillRect(-20, -20, W + 40, H + 40);
+    const vig = g.createRadialGradient(W / 2, H / 2, Math.min(W, H) * 0.3, W / 2, H / 2, Math.max(W, H) * 0.8);
+    vig.addColorStop(0, 'rgba(0, 0, 0, 0)');
+    vig.addColorStop(1, 'rgba(0, 0, 0, 0.45)');
+    g.fillStyle = vig;
+    g.fillRect(-20, -20, W + 40, H + 40);
+    return c;
+}
+
+function fullRect(rec) {
+    const t = rec.trim;
+    return { img: rec.img, x: t.x, y: t.y, w: t.w, h: t.h };
+}
+
+function bakeSprites() {
+    cache.overlay = bakeOverlay();
+    cache.items = {};
+    cache.orbs = {};
+    for (const kind of ['smetannik', 'tomat', 'olive']) {
+        const rec = R(kind);
+        if (!rec.loaded) continue;
+        const d = itemDims(kind);
+        cache.items[kind] = bakeSprite(fullRect(rec), d.w, d.h, DEFAULT_GLOW[kind], 18, false);
+    }
+    // Золотой сметанник: окрашенная копия (или обычный, если окраска недоступна) + пульсирующее гало
+    const dg = itemDims('golden');
+    if (goldenSprite) {
+        cache.items.golden = bakeSprite({ img: goldenSprite, x: 0, y: 0, w: goldenSprite.width, h: goldenSprite.height }, dg.w, dg.h, 'rgba(255, 200, 60, 1)', 26, true);
+    } else if (R('smetannik').loaded) {
+        cache.items.golden = bakeSprite(fullRect(R('smetannik')), dg.w, dg.h, 'rgba(255, 200, 60, 1)', 26, true);
+    }
+    for (const kind of ['magnet', 'slow', 'shield']) {
+        cache.orbs[kind] = bakeOrb(kind, itemDims(kind).size);
+    }
+    const rec = skinRec();
+    cache.player = (rec && rec.loaded)
+        ? bakeSprite(fullRect(rec), player.w, player.h, 'rgba(255, 233, 168, 0.45)', 18, false)
+        : null;
+}
+
+function pickBg() {
+    if (nasevichMode && R('nasevich').loaded) return { name: 'nasevich', rec: R('nasevich'), fxp: 0.8, fyp: 0.62 };
+    let name = H >= W ? 'bgMobile' : 'bgPc';
+    if (!R(name).loaded) name = R('bgMobile').loaded ? 'bgMobile' : 'bgPc';
+    return { name, rec: R(name), fxp: 0.5, fyp: 0.5 };
+}
+
+function ensureCache() {
+    const key = [W, H, dpr, currentSkin, Math.round(player.w), Math.round(player.h), loadedCount(), goldenSprite ? 1 : 0].join('|');
+    if (key !== cache.key) {
+        cache.key = key;
+        bakeSprites();
+        cache.bgKey = '';
+    }
+    const b = pickBg();
+    const bgKey = b.name + '|' + b.rec.loaded + '|' + W + '|' + H + '|' + dpr;
+    if (bgKey !== cache.bgKey) {
+        cache.bgKey = bgKey;
+        cache.bg = null;
+        if (b.rec.loaded) {
+            const iw = b.rec.img.naturalWidth, ih = b.rec.img.naturalHeight;
+            const s = Math.max(W / iw, H / ih) * 1.08;
+            cache.bgDw = iw * s;
+            cache.bgDh = ih * s;
+            const c = mk(cache.bgDw * dpr, cache.bgDh * dpr);
+            const g = c.getContext('2d');
+            g.imageSmoothingQuality = 'high';
+            g.drawImage(b.rec.img, 0, 0, c.width, c.height);
+            cache.bg = c;
+        }
+    }
+    return b;
+}
+
+// ---------- Отрисовка ----------
+function drawBackground(b) {
+    if (!cache.bg) {
         ctx.fillStyle = '#2a1f3a';
         ctx.fillRect(0, 0, W, H);
         return;
     }
     const par = ((player.x + player.w / 2) / Math.max(W, 1) - 0.5) * 0.5;
-    drawCover(rec, fxp, fyp, 1.08, par);
-}
-
-function drawSprite(rec, w, h) {
-    const t = rec.trim;
-    ctx.drawImage(rec.img, t.x, t.y, t.w, t.h, -w / 2, -h / 2, w, h);
-}
-
-function drawOrb(kind, r) {
-    const info = POWER_INFO[kind];
-    const pulse = 1 + Math.sin(animT * 6) * 0.05;
-    ctx.shadowColor = info.glow;
-    ctx.shadowBlur = 22;
-    const g = ctx.createRadialGradient(-r * 0.3, -r * 0.35, r * 0.1, 0, 0, r * pulse);
-    g.addColorStop(0, 'rgba(255, 255, 255, 0.95)');
-    g.addColorStop(0.45, info.fill);
-    g.addColorStop(1, 'rgba(30, 20, 50, 0.92)');
-    ctx.fillStyle = g;
-    ctx.beginPath();
-    ctx.arc(0, 0, r * pulse, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.shadowBlur = 0;
-    ctx.strokeStyle = 'rgba(255, 255, 255, 0.75)';
-    ctx.lineWidth = 2;
-    ctx.stroke();
-    ctx.font = Math.round(r * 1.15) + 'px system-ui, "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", sans-serif';
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'middle';
-    ctx.fillStyle = '#fff';
-    ctx.fillText(info.icon, 0, r * 0.06);
+    const dw = cache.bgDw, dh = cache.bgDh;
+    const x = clamp((W - dw) * (b.fxp + par), W - dw, 0);
+    const y = clamp((H - dh) * b.fyp, H - dh, 0);
+    ctx.drawImage(cache.bg, x, y, dw, dh);
 }
 
 function drawStar(r, alpha) {
@@ -1559,17 +1720,14 @@ function drawPlayer() {
         ctx.restore();
     }
 
-    const rec = skinRec();
+    const s = cache.player;
     ctx.save();
     ctx.translate(cx, by);
     ctx.rotate(player.tilt);
     const sq = fx.squash;
     ctx.scale(1 + 0.07 * sq, 1 - 0.07 * sq);
-    ctx.shadowColor = 'rgba(255, 233, 168, 0.45)';
-    ctx.shadowBlur = 18;
-    if (rec && rec.loaded) {
-        const t = rec.trim;
-        ctx.drawImage(rec.img, t.x, t.y, t.w, t.h, -player.w / 2, -player.h, player.w, player.h);
+    if (s) {
+        ctx.drawImage(s.c, -player.w / 2 - s.padCss, -player.h - s.padCss, player.w + s.padCss * 2, player.h + s.padCss * 2);
     } else {
         ctx.fillStyle = '#6a54f0';
         ctx.fillRect(-player.w / 2, -player.h, player.w, player.h);
@@ -1584,21 +1742,33 @@ function drawItems() {
         ctx.translate(cx, cy);
         ctx.rotate(Math.sin(animT * 3 + it.phase) * 0.18);
         if (POWER_INFO[it.kind]) {
-            drawOrb(it.kind, it.w / 2);
+            const s = cache.orbs[it.kind];
+            if (s) {
+                const pulse = 1 + Math.sin(animT * 6) * 0.05;
+                const k = (it.w / s.w) * pulse;
+                const dw = (s.w + s.padCss * 2) * k;
+                ctx.drawImage(s.c, -dw / 2, -dw / 2, dw, dw);
+            }
         } else if (it.kind === 'golden') {
-            ctx.shadowColor = 'rgba(255, 200, 60, ' + (0.75 + Math.sin(animT * 7) * 0.2) + ')';
-            ctx.shadowBlur = 26;
-            if (goldenSprite) ctx.drawImage(goldenSprite, -it.w / 2, -it.h / 2, it.w, it.h);
-            else if (R('smetannik').loaded) drawSprite(R('smetannik'), it.w, it.h);
-            ctx.shadowBlur = 0;
+            const s = cache.items.golden;
+            if (s) {
+                const k = it.w / s.w;
+                const dw = (s.w + s.padCss * 2) * k, dh = (s.h + s.padCss * 2) * k;
+                ctx.globalAlpha = 0.75 + Math.sin(animT * 7) * 0.2;
+                ctx.drawImage(s.halo, -dw / 2, -dh / 2, dw, dh);
+                ctx.globalAlpha = 1;
+                ctx.drawImage(s.plain, -it.w / 2, -it.h / 2, it.w, it.h);
+            }
             ctx.translate(it.w * 0.28, -it.h * 0.34);
             ctx.rotate(animT * 1.5);
             drawStar(it.w * 0.2, 0.6 + Math.sin(animT * 8 + it.phase) * 0.4);
         } else {
-            const rec = R(it.kind);
-            ctx.shadowColor = DEFAULT_GLOW[it.kind];
-            ctx.shadowBlur = 18;
-            if (rec.loaded) drawSprite(rec, it.w, it.h);
+            const s = cache.items[it.kind];
+            if (s) {
+                const k = it.w / s.w;
+                const dw = (s.w + s.padCss * 2) * k, dh = (s.h + s.padCss * 2) * k;
+                ctx.drawImage(s.c, -dw / 2, -dh / 2, dw, dh);
+            }
         }
         ctx.restore();
     }
@@ -1606,49 +1776,49 @@ function drawItems() {
 
 function drawFxLayers() {
     // Частицы
-    ctx.save();
-    ctx.globalCompositeOperation = 'lighter';
-    for (const p of particles) {
-        ctx.globalAlpha = Math.max(0, Math.min(1, p.life));
-        ctx.fillStyle = p.color;
-        ctx.beginPath();
-        ctx.arc(p.x, p.y, p.size * (0.5 + 0.5 * p.life) + 1, 0, Math.PI * 2);
-        ctx.fill();
+    if (particles.length) {
+        ctx.save();
+        ctx.globalCompositeOperation = 'lighter';
+        for (const p of particles) {
+            ctx.globalAlpha = Math.max(0, Math.min(1, p.life));
+            ctx.fillStyle = p.color;
+            ctx.beginPath();
+            ctx.arc(p.x, p.y, p.size * (0.5 + 0.5 * p.life) + 1, 0, Math.PI * 2);
+            ctx.fill();
+        }
+        ctx.restore();
     }
-    ctx.restore();
 
     // Всплывающие надписи
-    ctx.save();
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'middle';
-    ctx.lineJoin = 'round';
-    ctx.lineWidth = 5;
-    for (const p of popups) {
-        ctx.font = '800 ' + (p.big ? 26 : 20) + 'px Unbounded, system-ui, sans-serif';
-        ctx.globalAlpha = Math.max(0, Math.min(1, p.life * 1.5));
-        ctx.strokeStyle = 'rgba(23, 16, 31, 0.88)';
-        ctx.strokeText(p.text, p.x, p.y);
-        ctx.fillStyle = p.color;
-        ctx.fillText(p.text, p.x, p.y);
+    if (popups.length) {
+        ctx.save();
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.lineJoin = 'round';
+        ctx.lineWidth = 5;
+        for (const p of popups) {
+            ctx.font = '800 ' + (p.big ? 26 : 20) + 'px Unbounded, system-ui, sans-serif';
+            ctx.globalAlpha = Math.max(0, Math.min(1, p.life * 1.5));
+            ctx.strokeStyle = 'rgba(23, 16, 31, 0.88)';
+            ctx.strokeText(p.text, p.x, p.y);
+            ctx.fillStyle = p.color;
+            ctx.fillText(p.text, p.x, p.y);
+        }
+        ctx.restore();
     }
-    ctx.restore();
 }
 
 function draw() {
     if (!W || !H) return;
+    const bg = ensureCache();
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     ctx.clearRect(0, 0, W, H);
-    ctx.imageSmoothingQuality = 'high';
 
     ctx.save();
     if (fx.shake > 0) ctx.translate((Math.random() - 0.5) * fx.shake, (Math.random() - 0.5) * fx.shake);
 
-    drawBackground();
-
-    ctx.fillStyle = gradShade;
-    ctx.fillRect(-20, -20, W + 40, H + 40);
-    ctx.fillStyle = gradVig;
-    ctx.fillRect(-20, -20, W + 40, H + 40);
+    drawBackground(bg);
+    if (cache.overlay) ctx.drawImage(cache.overlay, -20, -20, W + 40, H + 40);
 
     if (fx.slowTint > 0.01) {
         ctx.fillStyle = 'rgba(110, 160, 255, ' + (0.16 * fx.slowTint) + ')';
@@ -1656,11 +1826,11 @@ function draw() {
     }
 
     // Пылинки в воздухе
+    ctx.fillStyle = '#fff3d6';
     for (const d of dust) {
         const x = (((d.x + animT * d.s * 0.4) % 1) + 1) % 1 * W;
         const y = (((d.y - animT * d.s) % 1) + 1) % 1 * H;
         ctx.globalAlpha = d.a * (0.6 + 0.4 * Math.sin(animT * 1.5 + d.ph));
-        ctx.fillStyle = '#fff3d6';
         ctx.beginPath();
         ctx.arc(x, y, d.r, 0, Math.PI * 2);
         ctx.fill();
@@ -1686,17 +1856,40 @@ function draw() {
 }
 
 // ---------- Игровой цикл ----------
-let raf = 0, lastTs = 0;
+// Не рисуем чаще ~60 кадров/с (на экранах 90–144 Гц это экономит батарею и нагрев),
+// а игровая логика получает накопленное время, так что скорость игры не меняется.
+// Если телефон стабильно не тянет, разрешение канваса снижается ступенями (и запоминается).
+let raf = 0, lastTs = 0, accum = 0, slowFrames = 0;
+
+function lowerQuality() {
+    if (dprCap <= 1) return;
+    dprCap = Math.max(1, Math.min(dprCap, dpr) - 0.5);
+    store.set('smetannikDprCap', dprCap);
+    resizeCanvas();
+}
+
 function frame(ts) {
     raf = requestAnimationFrame(frame);
-    const dt = Math.min(0.05, (ts - lastTs) / 1000 || 0.016);
+    const d = (ts - lastTs) / 1000;
     lastTs = ts;
+    accum += Math.min(isFinite(d) && d > 0 ? d : 0.016, 0.05);
+    if (accum < 0.010) return;
+    const dt = accum;
+    accum = 0;
     step(dt);
     draw();
+
+    if (state === 'playing') {
+        if (dt > 0.026) slowFrames++;
+        else slowFrames = Math.max(0, slowFrames - 2);
+        if (slowFrames > 45) { slowFrames = 0; lowerQuality(); }
+    }
 }
 function startLoop() {
     if (raf) return;
     lastTs = performance.now();
+    accum = 0;
+    slowFrames = 0;
     raf = requestAnimationFrame(frame);
 }
 function stopLoop() {
@@ -1716,6 +1909,7 @@ const hudEls = {
     power: $('powerBar')
 };
 let prevHud = { s: 0, t: 0, l: 3, c: 0 };
+let livesShown = -1, lvlShown = '', fillShown = '', comboShown = '';
 
 function bump(el, cls) {
     el.classList.remove(cls);
@@ -1728,7 +1922,10 @@ function renderHUD() {
     hudEls.t.textContent = run.tomatoes;
 
     const n = Math.max(0, run.lives);
-    hudEls.lives.innerHTML = n <= MAX_LIVES ? HEART.repeat(n) : HEART + '<span class="lives-x">×' + n + '</span>';
+    if (n !== livesShown) {
+        livesShown = n;
+        hudEls.lives.innerHTML = n <= MAX_LIVES ? HEART.repeat(n) : HEART + '<span class="lives-x">×' + n + '</span>';
+    }
 
     if (run.score !== prevHud.s) bump(hudEls.chipS, 'bump');
     if (run.tomatoes !== prevHud.t) bump(hudEls.chipT, 'bump');
@@ -1739,14 +1936,17 @@ function renderHUD() {
         hudEls.combo.classList.remove('hidden');
         hudEls.comboN.textContent = run.combo;
         hudEls.comboM.textContent = 'x' + comboMult();
-        hudEls.comboF.style.width = (run.combo % 10) * 10 + '%';
+        const cw = (run.combo % 10) * 10 + '%';
+        if (cw !== comboShown) { comboShown = cw; hudEls.comboF.style.width = cw; }
         if (run.combo !== prevHud.c) bump(hudEls.combo, 'bump');
     } else {
         hudEls.combo.classList.add('hidden');
     }
 
-    hudEls.lvl.textContent = 'Ур. ' + run.level;
-    hudEls.lvlF.style.width = Math.round(((run.caught % LEVEL_STEP) / LEVEL_STEP) * 100) + '%';
+    const lt = 'Ур. ' + run.level;
+    if (lt !== lvlShown) { lvlShown = lt; hudEls.lvl.textContent = lt; }
+    const lf = Math.round(((run.caught % LEVEL_STEP) / LEVEL_STEP) * 100) + '%';
+    if (lf !== fillShown) { fillShown = lf; hudEls.lvlF.style.width = lf; }
 
     prevHud = { s: run.score, t: run.tomatoes, l: run.lives, c: run.combo };
 }
@@ -1769,7 +1969,11 @@ function renderPowers() {
                 hudEls.power.appendChild(el);
                 powerEls[k] = el;
             }
-            powerEls[k].lastChild.firstChild.style.width = Math.round(v * 100) + '%';
+            const pct = Math.round(v * 100);
+            if (powerEls[k]._p !== pct) {
+                powerEls[k]._p = pct;
+                powerEls[k].lastChild.firstChild.style.width = pct + '%';
+            }
         } else if (powerEls[k]) {
             powerEls[k].remove();
             powerEls[k] = null;
@@ -2109,6 +2313,7 @@ function init() {
     bindUI();
     loadAll().then(() => {
         buildGolden();
+        preloadSfx();
         layoutPlayer();
         player.x = W / 2 - player.w / 2;
         targetX = W / 2;
