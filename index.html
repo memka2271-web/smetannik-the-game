@@ -471,20 +471,8 @@
         }
         .floater { will-change: transform; }
 
-        .field-fps { margin-bottom: 16px; }
-        #fpsHint { font-weight: 700; font-size: 12px; color: var(--muted); }
-        .seg { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; }
-        .seg-btn {
-            padding: 11px 0;
-            font-family: var(--font-display); font-weight: 800; font-size: 13px;
-            color: var(--text);
-            background: rgba(255, 243, 214, 0.08);
-            border: 1px solid var(--stroke); border-radius: 12px;
-            cursor: pointer;
-            transition: background 0.2s ease, transform 0.15s ease;
-        }
-        .seg-btn:active { transform: scale(0.95); }
-        .seg-btn[aria-checked="true"] { color: #3a1d00; background: linear-gradient(180deg, #ffe58a, #ffc233); border-color: transparent; }
+        .toggle-row span { padding-right: 14px; line-height: 1.25; }
+        .toggle-row.disabled { opacity: 0.4; pointer-events: none; }
         .hud, #countdown, #banner, #toasts { contain: layout style; }
 
         @media (prefers-reduced-motion: reduce) {
@@ -630,18 +618,13 @@
                 <div class="field-row"><label for="volSfx">Звуки</label><span class="range-val"></span></div>
                 <input type="range" id="volSfx" min="0" max="1" step="0.1" value="1">
             </div>
-            <div class="field field-fps">
-                <div class="field-row"><label id="lblFps">Частота кадров</label><span id="fpsHint"></span></div>
-                <div class="seg" role="radiogroup" aria-labelledby="lblFps">
-                    <button type="button" role="radio" class="seg-btn" data-fps="60" aria-checked="true">60</button>
-                    <button type="button" role="radio" class="seg-btn" data-fps="90" aria-checked="false">90</button>
-                    <button type="button" role="radio" class="seg-btn" data-fps="120" aria-checked="false">120</button>
-                    <button type="button" role="radio" class="seg-btn" data-fps="144" aria-checked="false">144</button>
-                </div>
-            </div>
             <div class="toggle-row">
                 <span id="lblVibe">Вибрация</span>
                 <button id="tglVibe" class="switch" role="switch" aria-checked="true" aria-labelledby="lblVibe"><i></i></button>
+            </div>
+            <div id="rowVibeCatch" class="toggle-row">
+                <span id="lblVibeCatch">Вибрация при ловле сметанников</span>
+                <button id="tglVibeCatch" class="switch" role="switch" aria-checked="true" aria-labelledby="lblVibeCatch"><i></i></button>
             </div>
             <div class="toggle-row" style="margin-bottom:26px">
                 <span id="lblShake">Тряска экрана</span>
@@ -765,10 +748,10 @@ const store = {
 const reducedMotion = !!(window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches);
 
 const settings = Object.assign(
-    { music: 0.5, sfx: 1, vibrate: true, shake: !reducedMotion, fps: 60 },
+    { music: 0.5, sfx: 1, vibrate: true, vibrateCatch: true, shake: !reducedMotion },
     store.get('smetannikSettings', {})
 );
-if (![60, 90, 120, 144].includes(settings.fps)) settings.fps = 60;
+delete settings.fps;   // старая настройка частоты кадров больше не используется
 const saveSettings = () => store.set('smetannikSettings', settings);
 
 let highScore = parseInt(store.get('smetannikHighScore', 0), 10) || 0;
@@ -833,6 +816,8 @@ function haptic(name) {
     if (!settings.vibrate || !navigator.vibrate) return;
     const pattern = HAPTICS[name];
     if (pattern === undefined) return;
+    // Отдельный тумблер: отклик при ловле сметанников (обычных и золотых)
+    if ((name === 'tick' || name === 'golden') && !settings.vibrateCatch) return;
     const now = performance.now();
     // Лёгкие тики не чаще раза в 70 мс, чтобы не сливались в жужжание
     if ((name === 'tick' || name === 'ui') && now - lastHaptic < 70) return;
@@ -1448,6 +1433,14 @@ function updateWorld(dt) {
     if (run.shield) {
         run.shieldT -= dt;
         if (run.shieldT <= 0) { run.shield = false; run.shieldT = 0; }
+        else if (Math.random() < dt * 14) {
+            // Лёгкие искорки поднимаются вдоль контура героя
+            particles.push({
+                x: player.x + rand(0.12, 0.88) * player.w, y: player.y + rand(0.2, 0.95) * player.h,
+                vx: rand(-14, 14), vy: -rand(40, 95), g: 0,
+                life: 1, decay: 1.5, size: rand(0.6, 1.4), color: '#7fd4ff'
+            });
+        }
     }
     run.achT = (run.achT || 0) + dt;
     if (run.achT >= 1) { run.achT = 0; checkAchievements(); }
@@ -1524,7 +1517,7 @@ function step(dt) {
 // ---------- Кэши отрисовки ----------
 // Свечения (shadowBlur), масштабирование фона и градиенты — самое дорогое в кадре на телефоне.
 // Всё это один раз «запекается» в отдельные канвасы, а в кадре остаётся только drawImage.
-const cache = { key: '', bgKey: '', bg: null, bgDw: 0, bgDh: 0, overlay: null, items: {}, orbs: {}, player: null };
+const cache = { key: '', bgKey: '', bg: null, bgDw: 0, bgDh: 0, overlay: null, items: {}, orbs: {}, player: null, aura: null, rim: null };
 
 function mk(w, h) {
     const c = document.createElement('canvas');
@@ -1661,6 +1654,9 @@ function bakeSprites() {
     cache.player = (rec && rec.loaded)
         ? bakeSprite(fullRect(rec), player.w, player.h, 'rgba(255, 233, 168, 0.45)', 18, false)
         : null;
+    // Аура щита (только свечение вокруг силуэта, без самой картинки)
+    cache.aura = (rec && rec.loaded) ? bakeSprite(fullRect(rec), player.w, player.h, 'rgba(40, 175, 255, 1)', 30, true) : null;
+    cache.rim = (rec && rec.loaded) ? bakeSprite(fullRect(rec), player.w, player.h, 'rgba(150, 225, 255, 1)', 7, true) : null;
 }
 
 function pickBg() {
@@ -1754,30 +1750,25 @@ function drawPlayer() {
         ctx.restore();
     }
 
-    // Щит
-    if (run.shield) {
-        const blink = run.shieldT < 3 ? (Math.sin(animT * 14) > 0 ? 1 : 0.35) : 1;
-        ctx.save();
-        ctx.globalAlpha = blink;
-        const g = ctx.createRadialGradient(cx, player.y + player.h * 0.55, player.h * 0.2, cx, player.y + player.h * 0.55, player.h * 0.6);
-        g.addColorStop(0, 'rgba(143, 216, 255, 0.04)');
-        g.addColorStop(1, 'rgba(143, 216, 255, 0.35)');
-        ctx.fillStyle = g;
-        ctx.strokeStyle = 'rgba(190, 235, 255, 0.85)';
-        ctx.lineWidth = 3;
-        ctx.beginPath();
-        ctx.ellipse(cx, player.y + player.h * 0.55, player.w * 0.54, player.h * 0.54, 0, 0, Math.PI * 2);
-        ctx.fill();
-        ctx.stroke();
-        ctx.restore();
-    }
-
     const s = cache.player;
     ctx.save();
     ctx.translate(cx, by);
     ctx.rotate(player.tilt);
     const sq = fx.squash;
     ctx.scale(1 + 0.07 * sq, 1 - 0.07 * sq);
+    if (run.shield && cache.aura && cache.rim) {
+        // Энергетическая аура точно по силуэту героя: мягкое широкое свечение + яркая кромка
+        const blink = run.shieldT < 3 ? (Math.sin(animT * 14) > 0 ? 1 : 0.3) : 1;
+        const a = cache.aura, r = cache.rim;
+        ctx.globalCompositeOperation = 'lighter';
+        ctx.globalAlpha = blink * (0.95 + Math.sin(animT * 4) * 0.05);
+        ctx.drawImage(a.halo, -player.w / 2 - a.padCss, -player.h - a.padCss, player.w + a.padCss * 2, player.h + a.padCss * 2);
+        ctx.globalAlpha = blink * (0.9 + Math.sin(animT * 7 + 1) * 0.1);
+        ctx.drawImage(a.halo, -player.w / 2 - a.padCss, -player.h - a.padCss, player.w + a.padCss * 2, player.h + a.padCss * 2);
+        ctx.drawImage(r.halo, -player.w / 2 - r.padCss, -player.h - r.padCss, player.w + r.padCss * 2, player.h + r.padCss * 2);
+        ctx.globalAlpha = 1;
+        ctx.globalCompositeOperation = 'source-over';
+    }
     if (s) {
         ctx.drawImage(s.c, -player.w / 2 - s.padCss, -player.h - s.padCss, player.w + s.padCss * 2, player.h + s.padCss * 2);
     } else {
@@ -1908,18 +1899,9 @@ function draw() {
 }
 
 // ---------- Игровой цикл ----------
-// Не рисуем чаще ~60 кадров/с (на экранах 90–144 Гц это экономит батарею и нагрев),
-// а игровая логика получает накопленное время, так что скорость игры не меняется.
 // Если телефон стабильно не тянет, разрешение канваса снижается ступенями (и запоминается).
-let raf = 0, lastTs = 0, accum = 0, slowFrames = 0;
-let tickMs = 1000 / 60;      // реальный интервал между кадрами экрана (измеряется)
-let displayHz = 0;           // частота экрана для подсказки в настройках
+let raf = 0, lastTs = 0, slowFrames = 0;
 
-// Выбираем такт экрана, не ниже выбранного лимита (например, лимит 60 на экране 90 Гц даёт 90, а не 45).
-// Это не влияет на скорость игры: вся логика считается по реальному времени (dt).
-function dueToRender(accumMs, tick, fps) {
-    return accumMs + tick * 0.8 >= 1000 / fps;
-}
 
 function lowerQuality() {
     if (dprCap <= 1) return;
@@ -1932,11 +1914,10 @@ function frame(ts) {
     raf = requestAnimationFrame(frame);
     const d = (ts - lastTs) / 1000;
     lastTs = ts;
-    if (d > 0.002 && d < 0.04) tickMs = tickMs * 0.9 + d * 1000 * 0.1;
-    accum += Math.min(isFinite(d) && d > 0 ? d : 0.016, 0.05);
-    if (!dueToRender(accum * 1000, tickMs, settings.fps)) return;
-    const dt = accum;
-    accum = 0;
+    if (!(d > 0)) return;
+    // Игра идёт на частоте экрана; логика считается по реальному времени (dt),
+    // поэтому скорость одинакова на 60, 90, 120 и 144 Гц.
+    const dt = Math.min(d, 0.05);
     step(dt);
     draw();
 
@@ -1949,7 +1930,6 @@ function frame(ts) {
 function startLoop() {
     if (raf) return;
     lastTs = performance.now();
-    accum = 0;
     slowFrames = 0;
     raf = requestAnimationFrame(frame);
 }
@@ -2289,6 +2269,11 @@ function bindRange(el, key) {
     });
 }
 
+// Тумблер «вибрация при ловле» доступен только при включённой вибрации
+function syncVibeDeps() {
+    $('rowVibeCatch').classList.toggle('disabled', !settings.vibrate);
+}
+
 function bindSwitch(id, key) {
     const el = $(id);
     const sync = () => el.setAttribute('aria-checked', settings[key] ? 'true' : 'false');
@@ -2297,7 +2282,7 @@ function bindSwitch(id, key) {
         settings[key] = !settings[key];
         sync();
         saveSettings();
-        if (key === 'vibrate' && settings.vibrate) haptic('soft');
+        if (key === 'vibrate') { syncVibeDeps(); if (settings.vibrate) haptic('soft'); }
     });
 }
 
@@ -2326,17 +2311,10 @@ function bindUI() {
     bindRange(rangeEls.s, 'sfx');
     bindRange(rangeEls.sp, 'sfx');
     bindSwitch('tglVibe', 'vibrate');
+    bindSwitch('tglVibeCatch', 'vibrateCatch');
     bindSwitch('tglShake', 'shake');
+    syncVibeDeps();
 
-    const segBtns = document.querySelectorAll('.seg-btn');
-    const syncSeg = () => segBtns.forEach((btn) => btn.setAttribute('aria-checked', Number(btn.dataset.fps) === settings.fps ? 'true' : 'false'));
-    segBtns.forEach((btn) => btn.addEventListener('click', () => {
-        settings.fps = Number(btn.dataset.fps);
-        saveSettings();
-        syncSeg();
-        accum = 0;
-    }));
-    syncSeg();
     applyVolumes();
 
     $('btn-play').addEventListener('click', startGame);
@@ -2366,7 +2344,7 @@ function bindUI() {
 
     // Тихий «клик» интерфейса
     document.addEventListener('click', (e) => {
-        if (e.target.closest && e.target.closest('.btn, .icon-btn, .skin-card, .switch, .ghost-chip, .seg-btn')) {
+        if (e.target.closest && e.target.closest('.btn, .icon-btn, .skin-card, .switch, .ghost-chip')) {
             ensureAudio();
             synth.ui();
             haptic('ui');
@@ -2380,44 +2358,10 @@ function bindUI() {
     window.addEventListener('resize', resizeCanvas);
 }
 
-// Измеряем частоту обновления экрана (для подсказки в настройках и точного лимита кадров)
-function measureRefresh() {
-    return new Promise((resolve) => {
-        const ds = [];
-        let last = 0, finished = false;
-        const finish = () => {
-            if (finished) return;
-            finished = true;
-            if (ds.length >= 8) {
-                ds.sort((x, y) => x - y);
-                const med = ds[Math.floor(ds.length / 2)];
-                if (med > 2 && med < 40) {
-                    tickMs = med;
-                    const hz = 1000 / med;
-                    const steps = [48, 50, 60, 72, 75, 90, 100, 120, 144, 165, 240];
-                    displayHz = steps.reduce((best, s) => (Math.abs(s - hz) < Math.abs(best - hz) ? s : best), steps[0]);
-                    const hint = $('fpsHint');
-                    if (hint) hint.textContent = 'экран ≈ ' + displayHz + ' Гц';
-                }
-            }
-            resolve();
-        };
-        setTimeout(finish, 900);
-        const tick = (ts) => {
-            if (finished) return;
-            if (last) ds.push(ts - last);
-            last = ts;
-            if (ds.length >= 30) finish();
-            else requestAnimationFrame(tick);
-        };
-        requestAnimationFrame(tick);
-    });
-}
-
 function init() {
     resizeCanvas();
     bindUI();
-    Promise.all([loadAll(), measureRefresh()]).then(() => {
+    loadAll().then(() => {
         buildGolden();
         preloadSfx();
         layoutPlayer();
@@ -2446,8 +2390,7 @@ if (/debug/.test(location.hash)) {
         spawn(kind, x) { spawnItem(kind, x); },
         setTarget(x) { targetX = x; },
         step(dt) { step(dt); draw(); },
-        pause: pauseGame, resume: resumeGame, start: startGame, stop: stopLoop,
-        dueToRender, settings, get tickMs() { return tickMs; }
+        pause: pauseGame, resume: resumeGame, start: startGame, stop: stopLoop, settings
     };
 }
 
