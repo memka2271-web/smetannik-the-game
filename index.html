@@ -470,6 +470,21 @@
             background: rgba(28, 18, 40, 0.74);
         }
         .floater { will-change: transform; }
+
+        .field-fps { margin-bottom: 16px; }
+        #fpsHint { font-weight: 700; font-size: 12px; color: var(--muted); }
+        .seg { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; }
+        .seg-btn {
+            padding: 11px 0;
+            font-family: var(--font-display); font-weight: 800; font-size: 13px;
+            color: var(--text);
+            background: rgba(255, 243, 214, 0.08);
+            border: 1px solid var(--stroke); border-radius: 12px;
+            cursor: pointer;
+            transition: background 0.2s ease, transform 0.15s ease;
+        }
+        .seg-btn:active { transform: scale(0.95); }
+        .seg-btn[aria-checked="true"] { color: #3a1d00; background: linear-gradient(180deg, #ffe58a, #ffc233); border-color: transparent; }
         .hud, #countdown, #banner, #toasts { contain: layout style; }
 
         @media (prefers-reduced-motion: reduce) {
@@ -615,6 +630,15 @@
                 <div class="field-row"><label for="volSfx">Звуки</label><span class="range-val"></span></div>
                 <input type="range" id="volSfx" min="0" max="1" step="0.1" value="1">
             </div>
+            <div class="field field-fps">
+                <div class="field-row"><label id="lblFps">Частота кадров</label><span id="fpsHint"></span></div>
+                <div class="seg" role="radiogroup" aria-labelledby="lblFps">
+                    <button type="button" role="radio" class="seg-btn" data-fps="60" aria-checked="true">60</button>
+                    <button type="button" role="radio" class="seg-btn" data-fps="90" aria-checked="false">90</button>
+                    <button type="button" role="radio" class="seg-btn" data-fps="120" aria-checked="false">120</button>
+                    <button type="button" role="radio" class="seg-btn" data-fps="144" aria-checked="false">144</button>
+                </div>
+            </div>
             <div class="toggle-row">
                 <span id="lblVibe">Вибрация</span>
                 <button id="tglVibe" class="switch" role="switch" aria-checked="true" aria-labelledby="lblVibe"><i></i></button>
@@ -741,9 +765,10 @@ const store = {
 const reducedMotion = !!(window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches);
 
 const settings = Object.assign(
-    { music: 0.5, sfx: 1, vibrate: true, shake: !reducedMotion },
+    { music: 0.5, sfx: 1, vibrate: true, shake: !reducedMotion, fps: 60 },
     store.get('smetannikSettings', {})
 );
+if (![60, 90, 120, 144].includes(settings.fps)) settings.fps = 60;
 const saveSettings = () => store.set('smetannikSettings', settings);
 
 let highScore = parseInt(store.get('smetannikHighScore', 0), 10) || 0;
@@ -786,8 +811,33 @@ function playSfx(key) {
     snd.play().catch(() => {});
 }
 
-function vibrate(pattern) {
-    if (settings.vibrate && navigator.vibrate) navigator.vibrate(pattern);
+// ---------- Тактильный отклик ----------
+// Короткие «постукивания» по 6–25 мс вместо длинного жужжания: на современных линейных моторах (LRA)
+// это ощущается как лёгкий тап, похожий на Taptic Engine. Паттерн: [вкл, пауза, вкл, ...] в мс.
+const HAPTICS = {
+    ui:     6,
+    tick:   7,
+    soft:   12,
+    golden: [10, 26, 14],
+    power:  [8, 22, 12],
+    shield: [10, 20, 10],
+    level:  [8, 24, 10, 24, 16],
+    olive:  [10, 28, 14],
+    combo:  [8, 20, 10],
+    miss:   16,
+    damage: [22, 34, 12],
+    over:   [24, 60, 16, 60, 10]
+};
+let lastHaptic = 0;
+function haptic(name) {
+    if (!settings.vibrate || !navigator.vibrate) return;
+    const pattern = HAPTICS[name];
+    if (pattern === undefined) return;
+    const now = performance.now();
+    // Лёгкие тики не чаще раза в 70 мс, чтобы не сливались в жужжание
+    if ((name === 'tick' || name === 'ui') && now - lastHaptic < 70) return;
+    lastHaptic = now;
+    try { navigator.vibrate(pattern); } catch (e) { /* не поддерживается */ }
 }
 
 // Синтезированные звуки (не требуют файлов)
@@ -1229,11 +1279,12 @@ function gainPoints(base, item, isGolden) {
     spawnPopup(cx, cy, '+' + pts, isGolden ? '#ffd35c' : '#ffe58a', isGolden);
     spawnParticles(cx, cy, isGolden ? '#ffd35c' : '#ffe58a', isGolden ? 26 : 10, { g: 900 });
     fx.squash = 1;
-    if (isGolden) { synth.golden(); fx.gold = 0.5; vibrate(40); }
-    else synth.catch(run.combo);
+    if (isGolden) { synth.golden(); fx.gold = 0.5; haptic('golden'); }
+    else { synth.catch(run.combo); haptic('tick'); }
 
     if (run.combo > 0 && run.combo % 10 === 0) {
         synth.combo();
+        haptic('combo');
         fx.gold = Math.max(fx.gold, 0.35);
         spawnPopup(player.x + player.w / 2, player.y - 20, 'Серия ×' + run.combo + '!', '#ffb347', true);
         showBanner('Серия ×' + run.combo, 'множитель очков x' + comboMult(), 1100);
@@ -1249,6 +1300,7 @@ function gainPoints(base, item, isGolden) {
 function levelUp(n) {
     run.level = n;
     synth.level();
+    haptic('level');
     fx.gold = 0.6;
     let sub = 'предметы падают быстрее';
     if (run.lives < 3) { run.lives++; sub = '+1 жизнь, предметы падают быстрее'; }
@@ -1266,7 +1318,7 @@ function loseLife(cx, cy, reason) {
         fx.gold = 0.35;
         spawnParticles(player.x + player.w / 2, player.y + player.h * 0.5, '#8fd8ff', 30, { ring: true, g: 200 });
         spawnPopup(cx, cy, 'Щит!', '#8fd8ff', true);
-        vibrate(60);
+        haptic('shield');
         checkAchievements();
         renderHUD();
         return false;
@@ -1287,7 +1339,7 @@ function collect(item) {
         case 'olive':
             run.olives++;
             playSfx('maslina');
-            vibrate([100, 50, 100]);
+            haptic('olive');
             spawnParticles(cx, cy, '#b7d65a', 18);
             if (run.lives < MAX_LIVES) { run.lives++; spawnPopup(cx, cy, '+1 ❤', '#b7d65a', true); }
             else { run.score += 3; spawnPopup(cx, cy, '+3', '#b7d65a', true); }
@@ -1297,14 +1349,14 @@ function collect(item) {
         case 'tomat':
             run.tomatoes++;
             playSfx('brosok');
-            vibrate(100);
+            haptic('damage');
             spawnParticles(cx, cy, '#ff5a52', 22);
             if (loseLife(cx, cy, 'tomato')) spawnPopup(cx, cy, '−1 ❤', '#ff7b73', true);
             break;
         case 'magnet': case 'slow': case 'shield': {
             const info = POWER_INFO[item.kind];
             synth.power();
-            vibrate(50);
+            haptic('power');
             spawnParticles(cx, cy, info.fill, 24, { ring: true, g: 200 });
             spawnPopup(cx, cy, info.icon, '#fff', true);
             if (item.kind === 'magnet') run.magnetT = info.dur;
@@ -1320,7 +1372,7 @@ function missed(item) {
     const cx = clamp(item.x + item.w / 2, 40, W - 40);
     if (item.kind === 'smetannik') {
         playSfx('error');
-        vibrate([50, 50, 50]);
+        haptic('miss');
         spawnParticles(cx, H, '#ffe58a', 10);
         if (loseLife(cx, H - 60, 'missed')) spawnPopup(cx, H - 60, '−1 ❤', '#ff7b73', true);
     } else if (item.kind === 'golden') {
@@ -1860,6 +1912,14 @@ function draw() {
 // а игровая логика получает накопленное время, так что скорость игры не меняется.
 // Если телефон стабильно не тянет, разрешение канваса снижается ступенями (и запоминается).
 let raf = 0, lastTs = 0, accum = 0, slowFrames = 0;
+let tickMs = 1000 / 60;      // реальный интервал между кадрами экрана (измеряется)
+let displayHz = 0;           // частота экрана для подсказки в настройках
+
+// Выбираем такт экрана, не ниже выбранного лимита (например, лимит 60 на экране 90 Гц даёт 90, а не 45).
+// Это не влияет на скорость игры: вся логика считается по реальному времени (dt).
+function dueToRender(accumMs, tick, fps) {
+    return accumMs + tick * 0.8 >= 1000 / fps;
+}
 
 function lowerQuality() {
     if (dprCap <= 1) return;
@@ -1872,8 +1932,9 @@ function frame(ts) {
     raf = requestAnimationFrame(frame);
     const d = (ts - lastTs) / 1000;
     lastTs = ts;
+    if (d > 0.002 && d < 0.04) tickMs = tickMs * 0.9 + d * 1000 * 0.1;
     accum += Math.min(isFinite(d) && d > 0 ? d : 0.016, 0.05);
-    if (accum < 0.010) return;
+    if (!dueToRender(accum * 1000, tickMs, settings.fps)) return;
     const dt = accum;
     accum = 0;
     step(dt);
@@ -2100,7 +2161,7 @@ function startDying() {
     dyingT = 1.0;
     fx.dmg = 1;
     addShake(18);
-    vibrate([120, 60, 200]);
+    haptic('over');
 }
 
 function commitRun() {
@@ -2236,7 +2297,7 @@ function bindSwitch(id, key) {
         settings[key] = !settings[key];
         sync();
         saveSettings();
-        if (key === 'vibrate' && settings.vibrate) vibrate(30);
+        if (key === 'vibrate' && settings.vibrate) haptic('soft');
     });
 }
 
@@ -2266,6 +2327,16 @@ function bindUI() {
     bindRange(rangeEls.sp, 'sfx');
     bindSwitch('tglVibe', 'vibrate');
     bindSwitch('tglShake', 'shake');
+
+    const segBtns = document.querySelectorAll('.seg-btn');
+    const syncSeg = () => segBtns.forEach((btn) => btn.setAttribute('aria-checked', Number(btn.dataset.fps) === settings.fps ? 'true' : 'false'));
+    segBtns.forEach((btn) => btn.addEventListener('click', () => {
+        settings.fps = Number(btn.dataset.fps);
+        saveSettings();
+        syncSeg();
+        accum = 0;
+    }));
+    syncSeg();
     applyVolumes();
 
     $('btn-play').addEventListener('click', startGame);
@@ -2295,9 +2366,10 @@ function bindUI() {
 
     // Тихий «клик» интерфейса
     document.addEventListener('click', (e) => {
-        if (e.target.closest && e.target.closest('.btn, .icon-btn, .skin-card, .switch, .ghost-chip')) {
+        if (e.target.closest && e.target.closest('.btn, .icon-btn, .skin-card, .switch, .ghost-chip, .seg-btn')) {
             ensureAudio();
             synth.ui();
+            haptic('ui');
         }
     });
 
@@ -2308,10 +2380,44 @@ function bindUI() {
     window.addEventListener('resize', resizeCanvas);
 }
 
+// Измеряем частоту обновления экрана (для подсказки в настройках и точного лимита кадров)
+function measureRefresh() {
+    return new Promise((resolve) => {
+        const ds = [];
+        let last = 0, finished = false;
+        const finish = () => {
+            if (finished) return;
+            finished = true;
+            if (ds.length >= 8) {
+                ds.sort((x, y) => x - y);
+                const med = ds[Math.floor(ds.length / 2)];
+                if (med > 2 && med < 40) {
+                    tickMs = med;
+                    const hz = 1000 / med;
+                    const steps = [48, 50, 60, 72, 75, 90, 100, 120, 144, 165, 240];
+                    displayHz = steps.reduce((best, s) => (Math.abs(s - hz) < Math.abs(best - hz) ? s : best), steps[0]);
+                    const hint = $('fpsHint');
+                    if (hint) hint.textContent = 'экран ≈ ' + displayHz + ' Гц';
+                }
+            }
+            resolve();
+        };
+        setTimeout(finish, 900);
+        const tick = (ts) => {
+            if (finished) return;
+            if (last) ds.push(ts - last);
+            last = ts;
+            if (ds.length >= 30) finish();
+            else requestAnimationFrame(tick);
+        };
+        requestAnimationFrame(tick);
+    });
+}
+
 function init() {
     resizeCanvas();
     bindUI();
-    loadAll().then(() => {
+    Promise.all([loadAll(), measureRefresh()]).then(() => {
         buildGolden();
         preloadSfx();
         layoutPlayer();
@@ -2340,7 +2446,8 @@ if (/debug/.test(location.hash)) {
         spawn(kind, x) { spawnItem(kind, x); },
         setTarget(x) { targetX = x; },
         step(dt) { step(dt); draw(); },
-        pause: pauseGame, resume: resumeGame, start: startGame
+        pause: pauseGame, resume: resumeGame, start: startGame, stop: stopLoop,
+        dueToRender, settings, get tickMs() { return tickMs; }
     };
 }
 
