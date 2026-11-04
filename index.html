@@ -75,7 +75,7 @@
             backdrop-filter: blur(7px);
             -webkit-backdrop-filter: blur(7px);
         }
-        #screen-skins, #screen-settings, #screen-stats {
+        #screen-skins, #screen-settings, #screen-stats, #screen-info, #screen-locations, #screen-shop {
             z-index: 50;
             background: rgba(14, 9, 20, 0.74);
             backdrop-filter: blur(14px);
@@ -370,6 +370,7 @@
         .power[data-k="magnet"] u { background: #ff7b73; }
         .power[data-k="shield"] u { background: var(--ice); }
         .power[data-k="slow"] u { background: #b9a8ff; }
+        .power[data-k="dbl"] u { background: var(--butter); }
 
         .hud-right { display: flex; flex-direction: column; align-items: flex-end; gap: 10px; }
         .level-pill { display: flex; flex-direction: column; align-items: stretch; gap: 5px; min-width: 64px; padding: 6px 12px 7px; background: var(--glass); border: 1px solid var(--stroke); border-radius: 16px; backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); text-align: center; }
@@ -488,6 +489,60 @@
             .panel { padding: 20px 20px 18px; }
             .panel-title { margin-bottom: 16px; }
         }
+
+        /* ---------- Инфо и локации ---------- */
+        .info-tabs{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin-bottom:14px;max-width:460px}
+        .info-tab{padding:9px 14px;font-weight:800;font-size:13px;color:var(--text);background:rgba(255,243,214,.08);border:1px solid var(--stroke);border-radius:999px;cursor:pointer}
+        .info-tab.active{color:#3a1d00;background:var(--butter);border-color:transparent}
+        .info-grid{display:flex;flex-wrap:wrap;gap:10px;justify-content:center;max-width:460px;margin-bottom:14px}
+        .info-tile{width:88px;padding:8px 6px;text-align:center;color:var(--text);background:var(--glass);border:2px solid var(--stroke);border-radius:18px;cursor:pointer;transition:transform .2s,border-color .2s,background .2s}
+        .info-tile:hover{transform:translateY(-3px)}
+        .info-tile.active{border-color:var(--butter);background:rgba(255,211,92,.1);box-shadow:0 14px 28px -14px rgba(255,194,51,.5)}
+        .info-tile .ic{display:grid;place-items:center;height:50px;font-size:30px}
+        .info-tile .ic img,.info-big img{max-width:100%;max-height:100%;object-fit:contain}
+        .info-tile .ic img{max-width:50px;max-height:50px}
+        .info-tile small{display:block;margin-top:4px;font-size:11px;font-weight:800;line-height:1.15}
+        .info-card{width:min(94vw,440px);padding:20px}
+        .info-head{display:flex;align-items:center;gap:14px;margin-bottom:12px}
+        .info-big{flex:none;width:80px;height:80px;display:grid;place-items:center;padding:8px;font-size:46px;border-radius:20px;background:radial-gradient(90% 90% at 50% 100%,rgba(255,243,214,.22),rgba(255,243,214,.05))}
+        .info-head h4{margin:0;font-family:var(--font-display);font-weight:900;font-size:19px;line-height:1.15}
+        .info-tag{display:inline-block;margin-top:6px;padding:3px 10px;font-size:11px;font-weight:800;color:#3a1d00;background:var(--butter);border-radius:999px}
+        .info-card p{margin:0 0 12px;font-weight:600;font-size:14px;line-height:1.45;color:var(--muted)}
+        .info-facts{list-style:none;margin:0;padding:0;display:grid;gap:6px}
+        .info-facts li{padding:8px 12px;font-size:13px;font-weight:700;background:rgba(255,243,214,.06);border:1px solid var(--stroke);border-radius:12px}
+        .loc-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;width:100%;max-width:420px;margin-bottom:16px}
+        .loc-card{position:relative;min-height:140px;padding:0;overflow:hidden;color:var(--text);background:var(--glass);border:2px solid var(--stroke);border-radius:22px;cursor:pointer;text-align:left;transition:transform .2s,border-color .2s}
+        .loc-card:not(.locked):hover{transform:translateY(-3px)}
+        .loc-card.active{border-color:var(--butter);box-shadow:0 0 0 4px rgba(255,211,92,.15),0 18px 34px -14px rgba(255,194,51,.5)}
+        .loc-card.locked{cursor:default}
+        .loc-bg{position:absolute;inset:0;background-size:cover;background-position:center}
+        .loc-lock{position:absolute;top:38%;left:50%;transform:translate(-50%,-50%);font-size:34px;opacity:.8}
+        .loc-info{position:absolute;left:0;right:0;bottom:0;padding:26px 12px 10px;background:linear-gradient(0deg,rgba(14,9,20,.94),transparent)}
+        .loc-info b{display:block;font-size:15px}
+        .loc-info small{font-size:11px;font-weight:800;color:var(--butter)}
+
+        #game-container.playing, #game-container.playing canvas { cursor: none; }
+        #game-container.playing .icon-btn { cursor: pointer; }
+        #game-container.mp .hud-left, #game-container.mp .level-pill { display: none; }
+    
+        /* ---------- Магазин ---------- */
+        .shop-bal{display:inline-flex;align-items:center;gap:10px;padding:6px 22px 6px 10px;margin-bottom:14px;background:var(--glass);border:1px solid var(--stroke);border-radius:999px}
+        .shop-bal img{width:34px;height:34px;object-fit:contain}
+        .shop-bal b{font-family:var(--font-display);font-weight:800;font-size:24px;color:var(--butter);font-variant-numeric:tabular-nums}
+        .shop-list{list-style:none;margin:0 0 16px;padding:0 2px;width:100%;max-width:440px;max-height:min(58vh,520px);overflow-y:auto;touch-action:pan-y;scrollbar-width:none}
+        .shop-list::-webkit-scrollbar{display:none}
+        .shop-item{display:flex;align-items:center;gap:12px;padding:12px;margin-bottom:10px;background:var(--glass);border:1px solid var(--stroke);border-radius:20px}
+        .shop-item.owned{border-color:rgba(255,211,92,.5)}
+        .shop-item.bump{animation:bump .3s ease}
+        .shop-ic{flex:none;width:48px;height:48px;display:grid;place-items:center;font-size:26px;border-radius:14px;background:rgba(255,211,92,.16)}
+        .shop-txt{flex:1;min-width:0}
+        .shop-txt b{display:block;font-size:15px}
+        .shop-txt small{display:block;margin-top:2px;font-size:12px;font-weight:600;line-height:1.3;color:var(--muted)}
+        .shop-eq{display:flex;align-items:center;gap:6px;margin-top:6px;font-size:12px;font-weight:800;color:var(--butter);cursor:pointer}
+        .shop-eq input{width:16px;height:16px;accent-color:var(--butter-deep)}
+        .shop-buy{flex:none;padding:12px 14px;font-size:13px;color:#3a1d00;background:linear-gradient(180deg,#ffe58a,#ffc233);box-shadow:0 4px 0 #b86d06}
+        .shop-buy:active{transform:translateY(3px);box-shadow:0 1px 0 #b86d06}
+        .shop-buy.poor{opacity:.45;filter:grayscale(.6)}
     </style>
 </head>
 <body>
@@ -562,6 +617,7 @@
                     <svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5.5v13a1 1 0 0 0 1.5.86l10.5-6.5a1 1 0 0 0 0-1.72L9.5 4.64A1 1 0 0 0 8 5.5z"/></svg>
                     Играть
                 </button>
+                <button id="btn-play2" class="btn btn-glass btn-block hidden">👥 2 игрока (ПК)</button>
                 <div class="btn-row">
                     <button id="btn-skins" class="btn btn-glass">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8.5 3 3 5.5 4.8 9.5 8 8.4V20h8V8.4l3.2 1.1L21 5.5 15.5 3a3.6 3.6 0 0 1-7 0z"/></svg>
@@ -572,9 +628,22 @@
                         Настройки
                     </button>
                 </div>
+                <div class="btn-row">
+                    <button id="btn-info" class="btn btn-glass">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 7.6v.1"/></svg>
+                        Инфо
+                    </button>
+                    <button id="btn-locs" class="btn btn-glass">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s7-5.6 7-11a7 7 0 0 0-14 0c0 5.4 7 11 7 11z"/><circle cx="12" cy="10" r="2.5"/></svg>
+                        Локации
+                    </button>
+                </div>
+                <button id="btn-shop" class="btn btn-glass btn-block">
+                    🛒 Магазин <span id="shopBal" class="badge">0</span>
+                </button>
                 <button id="btn-stats" class="btn btn-glass btn-block">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l2.6 5.6 6.1.7-4.5 4.2 1.2 6L12 16.5 6.6 19.5l1.2-6L3.3 9.3l6.1-.7z"/></svg>
-                    Достижения <span id="achBadge" class="badge">0/13</span>
+                    Достижения <span id="achBadge" class="badge">0/19</span>
                 </button>
             </div>
         </div>
@@ -584,6 +653,7 @@
     <div id="screen-skins" class="screen hidden">
         <h3 class="skins-title">Выбор скина</h3>
         <p class="skins-sub">Кого ловит сметанники сегодня?</p>
+        <div id="skinTabs" class="info-tabs"><button type="button" class="info-tab active" data-p="1">Игрок 1</button><button type="button" class="info-tab" data-p="2">Игрок 2 (режим для двоих)</button></div>
         <div class="skin-grid">
             <button type="button" class="skin-card active" data-skin="elisei.png">
                 <span class="skin-check"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></span>
@@ -659,9 +729,42 @@
         <div class="panel panel-wide">
             <h3 class="panel-title">Достижения</h3>
             <div id="statGrid" class="stat-grid"></div>
-            <div class="ach-head"><span>Награды</span><span id="achCount">0/13</span></div>
+            <div class="ach-head"><span>Награды</span><span id="achCount">0/19</span></div>
             <ul id="achList" class="ach-list"></ul>
             <button id="btn-close-stats" class="btn btn-violet btn-block">Готово</button>
+        </div>
+    </div>
+
+    <!-- Инфо -->
+    <div id="screen-info" class="screen hidden">
+        <h3 class="skins-title">Инфо</h3>
+        <p class="skins-sub">Всё, что есть в игре</p>
+        <div id="infoTabs" class="info-tabs"></div>
+        <div id="infoGrid" class="info-grid"></div>
+        <div id="infoCard" class="panel info-card"></div>
+        <div class="stack" style="max-width:260px;margin-top:16px">
+            <button id="btn-close-info" class="btn btn-glass btn-block">Назад</button>
+        </div>
+    </div>
+
+    <!-- Магазин -->
+    <div id="screen-shop" class="screen hidden">
+        <h3 class="skins-title">Магазин</h3>
+        <p class="skins-sub">Трать сметанники на бусты</p>
+        <div class="shop-bal"><img src="smetannik.png" alt="" onerror="this.style.display='none'"><b id="shopBalance">0</b></div>
+        <ul id="shopList" class="shop-list"></ul>
+        <div class="stack" style="max-width:260px">
+            <button id="btn-close-shop" class="btn btn-glass btn-block">Назад</button>
+        </div>
+    </div>
+
+    <!-- Локации -->
+    <div id="screen-locations" class="screen hidden">
+        <h3 class="skins-title">Локации</h3>
+        <p class="skins-sub">Где сегодня раздача?</p>
+        <div id="locGrid" class="loc-grid"></div>
+        <div class="stack" style="max-width:260px">
+            <button id="btn-close-locs" class="btn btn-glass btn-block">Назад</button>
         </div>
     </div>
 
@@ -693,7 +796,7 @@
     <!-- Game Over -->
     <div id="screen-gameover" class="screen hidden">
         <div class="panel go-card">
-            <h2 class="go-title">Игра окончена</h2>
+            <h2 id="goTitle" class="go-title">Игра окончена</h2>
             <p id="goRank" class="go-rank">Новичок у раздачи</p>
             <p class="go-label">Очки</p>
             <span id="finalScore" class="go-score">0</span>
@@ -707,6 +810,7 @@
                 <div><b id="goLevel">1</b><small>уровень</small></div>
             </div>
             <p class="go-best">Лучший результат: <b id="goBest">0</b></p>
+            <p id="goCoins" class="go-best" style="margin-top:-12px"></p>
             <div class="stack">
                 <button id="btn-restart" class="btn btn-primary btn-block btn-md">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 12a8.5 8.5 0 1 0 2.8-6.3L3.5 8.3M3.5 3.5v4.8h4.8"/></svg>
@@ -782,10 +886,23 @@ const stats = Object.assign(
 const unlocked = store.get('smetannikAch', {});
 let skinsUsed = store.get('smetannikSkinsUsed', []);
 let currentSkin = store.get('smetannikSkin', 'elisei.png');
+const bossesBeaten = store.get('smetannikBosses', {});
+let currentLoc = store.get('smetannikLoc', 'stolovka');
+const itemStats = store.get('smetannikItems', {});
+const saveItems = () => store.set('smetannikItems', itemStats);
+let skin2 = store.get('smetannikSkin2', 'greben.png'), skinTarget = 1;
+let wallet = Math.max(0, parseInt(store.get('smetannikWallet', 0), 10) || 0), walletDirty = false;
+const shopInv = store.get('smetannikShop', {});
+const shopOn = store.get('smetannikShopOn', {});
+function saveWallet() { walletDirty = false; store.set('smetannikWallet', wallet); }
+setInterval(() => { if (walletDirty) saveWallet(); }, 2500);
 
 // ---------- Звук ----------
 const audioMusic = new Audio('music.mp3');
 audioMusic.loop = true;
+const audioBoss = new Audio('bossfight.mp3');
+audioBoss.loop = true;
+audioBoss.preload = 'auto';
 
 const SFX_FILES = { brosok: 'brosok.mp3', error: 'error.mp3', over: 'over.mp3', maslina: 'maslina.mp3' };
 
@@ -1026,21 +1143,22 @@ const LEVEL_STEP = 20;          // сколько поймать сметанн�
 const POWER_INFO = {
     magnet: { icon: '🧲', glow: 'rgba(255, 123, 115, 0.9)', fill: '#ff7b73', dur: 8 },
     slow:   { icon: '❄️', glow: 'rgba(185, 168, 255, 0.9)', fill: '#b9a8ff', dur: 6 },
-    shield: { icon: '🛡️', glow: 'rgba(143, 216, 255, 0.9)', fill: '#8fd8ff', dur: 20 }
+    shield: { icon: '🛡️', glow: 'rgba(143, 216, 255, 0.9)', fill: '#8fd8ff', dur: 20 },
+    dbl:    { icon: '✨', glow: 'rgba(255, 211, 92, 0.9)', fill: '#ffd35c', dur: 45 }
 };
 const SIZE_MUL = { smetannik: 1.15, golden: 1.3, tomat: 0.95, olive: 0.8, magnet: 0.95, slow: 0.95, shield: 0.95 };
 
-let W = 0, H = 0, dpr = 1;
+let W = 0, H = 0, FW = 0, dpr = 1, mp = false;
 let dprCap = Math.min(2, Math.max(1, Number(store.get('smetannikDprCap', 2)) || 2));
 let state = 'loading';          // loading | menu | countdown | playing | paused | dying | gameover
 let nasevichMode = false;
 let run = null;
 let targetX = 0;
-const keys = { left: false, right: false };
+let keys = { left: false, right: false };
 const KEY_SPEED_BASE = 950;
 
-const player = { w: 0, h: 0, x: 0, y: 0, vx: 0, tilt: 0, hit: { x: 0, y: 0, w: 0, h: 0 } };
-let items = [], particles = [], popups = [], dust = [];
+let player = { w: 0, h: 0, x: 0, y: 0, vx: 0, tilt: 0, hit: { x: 0, y: 0, w: 0, h: 0 } };
+let items = [], particles = [], popups = [], dust = [], shots = [], deadBoss = null;
 let fx = { shake: 0, dmg: 0, gold: 0, squash: 0, slowTint: 0 };
 let cd = { n: 0, t: 0, resume: false };
 let dyingT = 0;
@@ -1051,8 +1169,8 @@ function newRun() {
         score: 0, caught: 0, tomatoes: 0, lives: 3, level: 1,
         combo: 0, bestCombo: 0, olives: 0, goldens: 0, shieldSaves: 0,
         time: 0, spawnT: 0.4, lastOliveT: -99, lastPowerT: -99,
-        shield: false, shieldT: 0, magnetT: 0, slowT: 0,
-        meme: false, committed: false, sparkT: 0, isNewRecord: false
+        shield: false, shieldT: 0, magnetT: 0, slowT: 0, dblT: 0, revive: false, earned: 0,
+        meme: false, boss: null, bossKills: 0, flawless: false, clearItems: false, event: null, evT: 22, windDir: 1, committed: false, sparkT: 0, isNewRecord: false
     };
 }
 run = newRun();
@@ -1071,7 +1189,13 @@ const ACH = [
     { id: 'survive', icon: '⏱️', title: 'Выживший',           desc: 'Продержись 3 минуты',                   test: () => run.time >= 180 },
     { id: 'lvl5',    icon: '🚀', title: 'Пятый уровень',      desc: 'Доберись до 5 уровня',                  test: () => run.level >= 5 },
     { id: 'fashion', icon: '👕', title: 'Модник',             desc: 'Сыграй за трёх разных героев',          test: () => skinsUsed.length >= 3 },
-    { id: 'collect', icon: '🎭', title: 'Коллекционер',       desc: 'Сыграй за всех героев',                 test: () => skinsUsed.length >= Object.keys(SKIN_FILES).length }
+    { id: 'collect', icon: '🎭', title: 'Коллекционер',       desc: 'Сыграй за всех героев',                 test: () => skinsUsed.length >= Object.keys(SKIN_FILES).length },
+    { id: 'boss1',    icon: '👑', title: 'Свергатель короля',   desc: 'Победи Сметанного Короля',               test: () => !!bossesBeaten.smetannik },
+    { id: 'boss2',    icon: '💢', title: 'Укротитель громилы',  desc: 'Победи Помидора-Громилу',                test: () => !!bossesBeaten.tomat },
+    { id: 'boss3',    icon: '👻', title: 'Охотник за призраком', desc: 'Победи Оливку-Призрака',                 test: () => !!bossesBeaten.olive },
+    { id: 'bossall',  icon: '🏆', title: 'Гроза боссов',        desc: 'Победи всех трёх боссов',                test: () => !!(bossesBeaten.smetannik && bossesBeaten.tomat && bossesBeaten.olive) },
+    { id: 'flawless', icon: '💎', title: 'Идеальный бой',       desc: 'Победи босса, не получив урона',         test: () => run.flawless },
+    { id: 'raid',     icon: '⚔️', title: 'Двойной удар',        desc: 'Победи двух боссов за одну игру',        test: () => run.bossKills >= 2 }
 ];
 
 function checkAchievements() {
@@ -1120,6 +1244,7 @@ function showBanner(title, sub, ms = 1400) {
 // ---------- Ввод ----------
 function setTargetFromEvent(e) {
     const rect = canvas.getBoundingClientRect();
+    if (mp) { if (worlds[1]) worlds[1].targetX = clamp(e.clientX - rect.left, 0, FW) / FW * W; return; }
     targetX = clamp(e.clientX - rect.left, 0, W);
 }
 canvas.addEventListener('pointermove', (e) => {
@@ -1131,8 +1256,7 @@ canvas.addEventListener('pointerdown', (e) => {
 
 window.addEventListener('keydown', (e) => {
     const k = e.code;
-    if (k === 'ArrowLeft' || k === 'KeyA') { keys.left = true; if (state === 'playing') e.preventDefault(); }
-    else if (k === 'ArrowRight' || k === 'KeyD') { keys.right = true; if (state === 'playing') e.preventDefault(); }
+    if (k === 'ArrowLeft' || k === 'KeyA' || k === 'ArrowRight' || k === 'KeyD') { kset(k, true); if (state === 'playing') e.preventDefault(); }
     else if (k === 'Escape' || k === 'KeyP') {
         if (state === 'playing' || state === 'countdown') pauseGame();
         else if (state === 'paused') resumeGame();
@@ -1142,22 +1266,23 @@ window.addEventListener('keydown', (e) => {
 });
 window.addEventListener('keyup', (e) => {
     const k = e.code;
-    if (k === 'ArrowLeft' || k === 'KeyA') keys.left = false;
-    else if (k === 'ArrowRight' || k === 'KeyD') keys.right = false;
+    kset(k, false);
 });
 
 // ---------- Размеры ----------
 let gradShade = null, gradVig = null, gradDmg = null;
 
 function resizeCanvas() {
-    W = container.clientWidth;
+    FW = container.clientWidth;
+    W = mp ? FW / 2 : FW;
     H = container.clientHeight;
     dpr = Math.min(dprCap, window.devicePixelRatio || 1);
-    canvas.width = Math.round(W * dpr);
+    canvas.width = Math.round(FW * dpr);
     canvas.height = Math.round(H * dpr);
     layoutPlayer();
     buildGradients();
     if (!dust.length) initDust();
+    if (mp) worlds.forEach((w) => { loadW(w); layoutPlayer(); saveW(w); });
     targetX = clamp(targetX || W / 2, 0, W);
     if (state !== 'playing' && state !== 'countdown' && state !== 'dying' && state !== 'paused') {
         player.x = W / 2 - player.w / 2;
@@ -1198,15 +1323,19 @@ function initDust() {
 
 // ---------- Спавн ----------
 function spawnInterval() {
-    return Math.max(0.55, 1.6 - run.caught / 160);
+    const b = 1.6 - run.caught / 160, e = run.event && run.event.k;
+    const v = Math.max(0.3, b > 0.55 ? b : 0.55 - (run.caught - 168) / 1500);
+    return e === 'rain' ? v * 0.4 : (e === 'storm' ? v * 3 : v);
 }
 
 function baseSpeed() {
     const scale = clamp(H / 720, 0.85, 1.35);
-    return Math.min(480, 150 + run.caught * 1.8 + (run.level - 1) * 6) * scale;
+    const raw = 150 + run.caught * 1.8 + (run.level - 1) * 6;
+    return (raw > 480 ? 480 + (raw - 480) * 0.3 : raw) * scale;
 }
 
 function pickType() {
+    if (run.event && run.event.k === 'rain') { const q = Math.random(); return q < 0.06 ? 'golden' : (q < 0.9 ? 'smetannik' : 'tomat'); }
     const t = run.time;
     const r = Math.random();
     if (run.caught >= 12 && t - run.lastPowerT > 14 && r < 0.06) {
@@ -1219,7 +1348,7 @@ function pickType() {
         return 'olive';
     }
     if (run.caught >= 8 && Math.random() < 0.05) return 'golden';
-    const tomatoP = 0.2 + Math.min(0.12, (run.level - 1) * 0.015);
+    const tomatoP = 0.2 + Math.min(0.26, (run.level - 1) * 0.012);
     return Math.random() < tomatoP ? 'tomat' : 'smetannik';
 }
 
@@ -1228,7 +1357,7 @@ function spriteFor(kind) {
     return IMG[kind];
 }
 
-function spawnItem(forcedKind, forcedX) {
+function spawnItem(forcedKind, forcedX, extra) {
     const kind = forcedKind || pickType();
     const size = clamp(W * 0.14, 46, 72) * SIZE_MUL[kind];
     // Пропорции берём у обрезанной текстуры; бонусы рисуются кругом
@@ -1248,12 +1377,43 @@ function spawnItem(forcedKind, forcedX) {
         }
         if (ok) break;
     }
-    if (typeof forcedX === 'number') x = forcedX;
-    items.push({
+    const forced = typeof forcedX === 'number';
+    if (forced) x = forcedX;
+    const created = {
         kind, x, y: -h, w, h,
         speed: baseSpeed() + rand(0, 90) * clamp(H / 720, 0.85, 1.35),
         phase: Math.random() * Math.PI * 2
-    });
+    };
+    if (run.event && run.event.k === 'wind') created.vx = run.windDir * rand(60, 120);
+    if (extra) Object.assign(created, extra);
+    // Честность: сметанник (и другая «хорошая» вещь) не должен лететь так, чтобы его нельзя было поймать,
+    // не зацепив помидор. Нечестный предмет с заданной позицией просто не появляется,
+    // у обычного ищем другое место.
+    if (unfairItem(created)) {
+        if (forced) return;
+        let ok = false;
+        for (let k = 0; k < 16 && !ok; k++) {
+            created.x = rand(8, Math.max(9, W - w - 8));
+            ok = !unfairItem(created);
+        }
+        if (!ok) return;
+    }
+    items.push(created);
+}
+
+function unfairItem(c) {
+    const py = player.y, good = c.kind !== 'tomat';
+    const ta = (py - (c.y + c.h)) / (c.speed || 1);
+    for (const o of items) {
+        if ((o.kind !== 'tomat') === good) continue;
+        const to = (py - (o.y + o.h)) / (o.speed || 1);
+        if (to < -0.4 || Math.abs(to - ta) > 0.65) continue;     // прилетят не одновременно: успеть увернуться можно
+        const s = good ? c : o, t = good ? o : c;
+        const d = 0.4 * Math.min(s.w, (player.hit && player.hit.w) || s.w) + ((s.sway || s.vx || t.sway || t.vx) ? 40 : 0);
+        if (t.x - s.x >= d || (s.x + s.w) - (t.x + t.w) >= d) continue;   // можно коснуться сметанника, не задев помидор
+        return true;
+    }
+    return false;
 }
 
 // ---------- Эффекты ----------
@@ -1279,16 +1439,17 @@ function spawnPopup(x, y, text, color, big) {
 function addShake(v) { if (settings.shake) fx.shake = Math.max(fx.shake, v); }
 
 // ---------- Комбо и очки ----------
-const comboMult = () => Math.min(4, 1 + Math.floor(run.combo / 10));
+const comboMult = () => 1 + Math.floor(run.combo / 10);
 
 function gainPoints(base, item, isGolden) {
     run.combo++;
     if (run.combo > run.bestCombo) run.bestCombo = run.combo;
     const mult = comboMult();
-    const pts = base * mult;
+    const pts = base * mult * (run.dblT > 0 ? 2 : 1);
     run.score += pts;
-    run.caught += isGolden ? 3 : 1;
+    if (!run.boss) run.caught += isGolden ? 3 : 1;
     if (isGolden) run.goldens++;
+    if (!mp) { const c = isGolden ? 3 : 1; wallet += c; run.earned += c; walletDirty = true; }
     const cx = item.x + item.w / 2, cy = item.y + item.h / 2;
     spawnPopup(cx, cy, '+' + pts, isGolden ? '#ffd35c' : '#ffe58a', isGolden);
     spawnParticles(cx, cy, isGolden ? '#ffd35c' : '#ffe58a', isGolden ? 26 : 10, { g: 900 });
@@ -1305,14 +1466,16 @@ function gainPoints(base, item, isGolden) {
     }
     if (!run.meme && run.score >= 67) { run.meme = true; triggerMeme67(); }
 
+    if (run.boss) launchShot(cx, cy, isGolden ? 3 : 1);
     const newLevel = Math.floor(run.caught / LEVEL_STEP) + 1;
-    if (newLevel > run.level) levelUp(newLevel);
+    if (!run.boss && newLevel > run.level) levelUp(newLevel);
     checkAchievements();
     renderHUD();
 }
 
 function levelUp(n) {
     run.level = n;
+    if (n % 5 === 0) { synth.level(); haptic('level'); fx.gold = 0.6; startBoss(n); return; }
     synth.level();
     haptic('level');
     fx.gold = 0.6;
@@ -1338,7 +1501,16 @@ function loseLife(cx, cy, reason) {
         return false;
     }
     run.lives--;
+    if (run.boss) run.boss.taken++;
     run.combo = 0;
+    if (run.lives <= 0 && run.revive) {
+        // Буст «Второй шанс»
+        run.revive = false; run.lives = 2; run.clearItems = true;
+        run.shield = true; run.shieldT = 4;
+        spawnParticles(player.x + player.w / 2, player.y + player.h * 0.5, '#ffd35c', 40, { ring: true, g: 200, slow: true });
+        spawnPopup(cx, cy, '⏳ Второй шанс!', '#ffd35c', true);
+        synth.level(); fx.gold = 0.8;
+    }
     fx.dmg = 1;
     addShake(14);
     renderHUD();
@@ -1347,6 +1519,7 @@ function loseLife(cx, cy, reason) {
 
 function collect(item) {
     const cx = item.x + item.w / 2, cy = item.y + item.h / 2;
+    itemStats[item.kind] = (itemStats[item.kind] || 0) + 1;
     switch (item.kind) {
         case 'smetannik': gainPoints(1, item, false); break;
         case 'golden':    gainPoints(5, item, true); break;
@@ -1384,6 +1557,13 @@ function collect(item) {
 
 function missed(item) {
     const cx = clamp(item.x + item.w / 2, 40, W - 40);
+    if (run.boss && item.kind === 'smetannik') {
+        run.boss.hp = Math.min(run.boss.max, run.boss.hp + 1);
+        spawnPopup(cx, H - 60, 'босс +1', '#ff9d8f', false);
+        spawnParticles(cx, H, '#ffe58a', 6);
+        renderHUD();
+        return;
+    }
     if (item.kind === 'smetannik') {
         playSfx('error');
         haptic('miss');
@@ -1394,6 +1574,456 @@ function missed(item) {
     } else {
         spawnParticles(cx, H, POWER_INFO[item.kind] ? POWER_INFO[item.kind].fill : '#ffffff', 5);
     }
+}
+
+// ---------- Боссы ----------
+const BOSS_ORDER = ['smetannik', 'tomat', 'olive'];
+const BOSSES = {
+    smetannik: { name: 'Сметанный Король', icon: '👑' },
+    tomat:     { name: 'Помидор-Громила',  icon: '💢' },
+    olive:     { name: 'Оливка-Призрак',   icon: '👻' }
+};
+const BOSS_THEME = {
+    smetannik: { c: '#ffd35c', tint: '255,236,170', tag: 'ВЛАДЫКА СМЕТАНЫ' },
+    tomat:     { c: '#ff5a52', tint: '255,60,50',   tag: 'КРАСНЫЙ ГНЕВ' },
+    olive:     { c: '#b7d65a', tint: '140,220,90',  tag: 'ТЕНЬ В МАСЛЕ' }
+};
+const INTRO = 2.8, DYING = 1.4;
+const ease = (t) => 1 - Math.pow(1 - t, 3);
+const rr = (x, y, w, h, r) => { ctx.beginPath(); if (ctx.roundRect) ctx.roundRect(x, y, w, h, r); else ctx.rect(x, y, w, h); };
+
+function startBoss(n) {
+    const idx = n / 5 - 1, kind = BOSS_ORDER[idx % 3], tier = Math.floor(idx / 3);
+    const rec = R(kind);
+    const a = (rec.loaded && rec.trim) ? rec.trim.w / rec.trim.h : 1;
+    let bw = clamp(W * 0.4, 120, 220), bh = bw / a;
+    if (bh > H * 0.26) { bh = H * 0.26; bw = bh * a; }
+    let red = null;
+    if (rec.loaded && rec.trim) {
+        try {
+            const t = rec.trim;
+            red = mk(bw * dpr, bh * dpr);
+            const g = red.getContext('2d');
+            g.drawImage(rec.img, t.x, t.y, t.w, t.h, 0, 0, red.width, red.height);
+            g.globalCompositeOperation = 'source-atop';
+            g.fillStyle = 'rgba(255, 30, 20, 0.78)';
+            g.fillRect(0, 0, red.width, red.height);
+        } catch (e) { red = null; }
+    }
+    const max = 80 + idx * 18;
+    run.boss = { kind, tier, hp: max, max, w: bw, h: bh, x: W / 2 - bw / 2, y: -bh - 20, homeY: clamp(H * 0.1, 56, 110),
+        enter: INTRO, t: 0, atk: 1.2, spec: 5, wave: 0, alpha: 1, fade: 0, hurt: 0, phase: 1, taken: 0, tpT: 2, red, q: [] };
+    run.event = null; run.evT = 30;
+    shots = [];
+    synth.power(); haptic('power');
+    renderHUD();
+}
+
+function bossFire(b, kind, x, ex) {
+    const d = itemDims(kind);
+    const bs = baseSpeed() * (0.55 + 0.05 * Math.min(b.tier, 4));
+    spawnItem(kind, clamp(x - d.w / 2, 6, W - d.w - 6), Object.assign({ y: b.y + b.h * 0.6, speed: bs + rand(0, 40) }, ex));
+}
+
+function updateBoss(dt) {
+    const b = run.boss, th = BOSS_THEME[b.kind];
+    b.t += dt;
+    b.hurt = Math.max(0, b.hurt - dt);
+    if (b.enter > 0) {
+        const prev = b.enter;
+        b.enter -= dt;
+        const p = 1 - Math.max(0, b.enter) / INTRO;
+        b.y = lerp(-b.h - 20, b.homeY, ease(clamp(p / 0.55, 0, 1)));
+        if (prev / INTRO > 0.45 && b.enter / INTRO <= 0.45) {
+            addShake(18); fx.gold = 0.5; synth.go(); haptic('damage');
+            spawnParticles(b.x + b.w / 2, b.y + b.h / 2, th.c, 50, { ring: true, g: 120 });
+        }
+        if (Math.random() < dt * 36) particles.push(b.kind === 'olive'
+            ? { x: rand(0, W), y: H + 6, vx: rand(-20, 20), vy: -rand(60, 160), g: 0, life: 1, decay: 0.5, size: rand(3, 6), color: th.c }
+            : { x: rand(0, W), y: -8, vx: rand(-30, 30), vy: rand(140, 300), g: 0, life: 1, decay: 0.45, size: rand(2, 4.5), color: th.c });
+        if (b.kind === 'tomat') addShake(3);
+        b.alpha = b.kind === 'olive' ? (Math.random() < 0.25 ? 0.35 : 1) : 1;
+        return;
+    }
+    b.y = b.homeY;
+    const ph = b.hp > b.max * 2 / 3 ? 1 : (b.hp > b.max / 3 ? 2 : 3);
+    if (ph > b.phase) {
+        b.phase = ph;
+        showBanner(ph === 3 ? 'Ярость!' : 'Фаза 2', BOSSES[b.kind].name + (ph === 3 ? ' в ярости' : ' меняет тактику'), 1500);
+        addShake(12); fx.gold = 0.4; synth.combo(); haptic('combo');
+        spawnParticles(b.x + b.w / 2, b.y + b.h / 2, th.c, 36, { ring: true, g: 100 });
+    }
+    const spd = 1 + 0.25 * (b.phase - 1), amp = W * 0.5 - b.w / 2 - 10;
+    if (b.kind === 'smetannik') b.x = W / 2 + Math.sin(b.t * 0.8 * spd) * amp - b.w / 2;
+    else if (b.kind === 'tomat') b.x = W / 2 + Math.sin(b.t * 0.5 * spd) * amp - b.w / 2;
+    else {
+        b.tpT -= dt;
+        if (b.fade > 0) b.fade -= dt;
+        b.alpha = b.fade > 0 ? 0.25 : 1;
+        if (b.tpT <= 0) {
+            b.tpT = [2.6, 2, 1.4][b.phase - 1];
+            b.fade = 0.35;
+            b.x = rand(10, W - b.w - 10);
+            const cx = b.x + b.w / 2;
+            [-1, 0, 1].forEach((s) => bossFire(b, Math.random() < 0.7 ? 'smetannik' : 'tomat', cx + s * b.w * 0.8, { sway: 70, ghost: true }));
+            spawnParticles(cx, b.y + b.h / 2, '#b7d65a', 16, { ring: true, g: 100 });
+        }
+    }
+    if (b.q.length) {
+        b.q.forEach((q) => { q.t -= dt; });
+        const due = b.q.filter((q) => q.t <= 0);
+        b.q = b.q.filter((q) => q.t > 0);
+        due.forEach((q) => q.f());
+    }
+    if ((b.spec -= dt) <= 0) { bossSpecial(b); b.spec = 9 - b.phase * 1.5; b.atk = 1.6; return; }
+    if ((b.atk -= dt) > 0) return;
+    bossAttack(b);
+}
+
+function bossSpecial(b) {
+    const ph = b.phase, cx = b.x + b.w / 2, f = (k, x, ex) => bossFire(b, k, x, ex);
+    addShake(5);
+    if (b.kind === 'smetannik') {
+        // «Сметанный ливень»: ряд сметанников по всей ширине
+        const n = Math.max(4, Math.floor(W / (clamp(W * 0.14, 46, 72) * 1.3))), gold = Math.floor(rand(0, n));
+        for (let i = 0; i < n; i++) f(i === gold && ph > 1 ? 'golden' : (i % 3 === 1 && ph > 1 ? 'tomat' : 'smetannik'), W * (i + 0.5) / n);
+        if (ph === 3) b.q.push({ t: 1.1, f: () => { for (let i = 0; i < n; i++) f(i % 2 ? 'tomat' : 'smetannik', W * (i + 0.5) / n); } });
+    } else if (b.kind === 'tomat') {
+        // Стена из помидоров (проход 3 клетки, внутри — сметанники)
+        const sp = baseSpeed() * (0.5 + 0.04 * Math.min(b.tier, 4));
+        makeWall(3, sp, f, true);
+        if (ph >= 2) [-1, 1].forEach((s) => f('tomat', cx, { vx: s * rand(110, 170) }));
+        if (ph === 3) b.q.push({ t: 2, f: () => makeWall(3, sp, f, true) });
+    } else {
+        // Призрачная стая
+        const n = 3 + ph * 2;
+        for (let i = 0; i < n; i++) f(i === 1 && run.lives < MAX_LIVES && ph > 1 ? 'olive' : (Math.random() < 0.6 ? 'smetannik' : 'tomat'), W * (i + 0.5) / n, { sway: 130, ghost: true });
+    }
+}
+
+function bossAttack(b) {
+    const ph = b.phase, cx = b.x + b.w / 2, f = (k, x, ex) => bossFire(b, k, x, ex);
+    b.wave++;
+    if (b.kind === 'smetannik') {
+        b.atk = [0.85, 0.7, 0.5][ph - 1];
+        f(b.wave % 7 === 0 ? 'golden' : (Math.random() < 0.25 ? 'tomat' : 'smetannik'), cx);
+        if (ph > 1) [-0.9, 0.9].forEach((s) => f(Math.random() < 0.3 ? 'tomat' : 'smetannik', cx + s * b.w));
+    } else if (b.kind === 'tomat') {
+        b.atk = [0.95, 0.8, 0.6][ph - 1];
+        f('smetannik', cx);
+        if (ph > 1 && Math.random() < 0.6) f('tomat', cx + rand(-b.w, b.w));
+        if (ph === 3 && Math.random() < 0.5) f('tomat', cx + rand(-b.w, b.w));
+    } else {
+        b.atk = [1.0, 0.8, 0.6][ph - 1];
+        const q = Math.random();
+        f(q < 0.5 ? 'smetannik' : (q < 0.85 ? 'tomat' : (run.lives < MAX_LIVES ? 'olive' : 'smetannik')), cx, { sway: ph === 3 ? 150 : 90, ghost: true });
+    }
+}
+
+// Пойманный сметанник отскакивает от героя и летит в босса
+function launchShot(x, y, d) {
+    if (!run.boss || run.boss.enter > 0) return;
+    shots.push({ x, y, vx: rand(-260, 260), vy: -rand(380, 560), sp: 300, d, rot: 0 });
+}
+
+function updateShots(dt) {
+    for (let i = shots.length - 1; i >= 0; i--) {
+        const b = run.boss, s = shots[i];
+        if (!b || b.enter > 0) { shots.splice(i, 1); continue; }
+        const dx = b.x + b.w / 2 - s.x, dy = b.y + b.h / 2 - s.y, dist = Math.hypot(dx, dy) || 1;
+        s.sp = Math.min(1200, s.sp + 2200 * dt);
+        const k = Math.min(1, dt * 7);
+        s.vx += (dx / dist * s.sp - s.vx) * k;
+        s.vy += (dy / dist * s.sp - s.vy) * k;
+        s.x += s.vx * dt; s.y += s.vy * dt; s.rot += dt * 12;
+        if (Math.random() < 0.7) particles.push({ x: s.x, y: s.y, vx: rand(-20, 20), vy: rand(-20, 20), g: 0, life: 1, decay: 3, size: rand(2, 4), color: s.d > 1 ? '#ffd35c' : '#fff3d6' });
+        if (dist < Math.max(30, b.w * 0.35)) {
+            shots.splice(i, 1);
+            hitBoss(s.d);
+            if (!run.boss) break;
+        }
+    }
+}
+
+function hitBoss(d) {
+    const b = run.boss;
+    if (!b || b.enter > 0) return;
+    b.hp -= d;
+    b.hurt = 0.3;
+    spawnPopup(b.x + b.w / 2, b.y + b.h + 20, '−' + d, '#ff7b73', true);
+    spawnParticles(b.x + b.w / 2, b.y + b.h / 2, '#ff5a52', 12, { g: 600 });
+    haptic('soft');
+    addShake(4);
+    if (b.hp <= 0) defeatBoss(); else renderHUD();
+}
+
+function defeatBoss() {
+    const b = run.boss;
+    run.boss = null;
+    run.bossKills++;
+    if (b.taken === 0) run.flawless = true;
+    bossesBeaten[b.kind] = (bossesBeaten[b.kind] || 0) + 1;
+    store.set('smetannikBosses', bossesBeaten);
+    const bonus = 50 * (b.tier + 1);
+    run.score += bonus;
+    if (!mp) { const c = 20 * (b.tier + 1); wallet += c; run.earned += c; walletDirty = true; }
+    if (run.lives < MAX_LIVES) run.lives++;
+    for (const it of items) spawnParticles(it.x + it.w / 2, it.y + it.h / 2, '#ffe58a', 6);
+    run.clearItems = true;
+    shots = [];
+    deadBoss = { kind: b.kind, x: b.x, y: b.y, w: b.w, h: b.h, red: b.red, t: 0 };
+    synth.level(); haptic('level');
+    fx.gold = 0.8; addShake(16);
+    showBanner('Босс побеждён!', '+' + bonus + ' очков, +1 жизнь', 2400);
+    run.spawnT = 2; run.evT = rand(20, 30);
+    checkAchievements();
+    renderHUD();
+}
+
+function tickDead(dt) {
+    const d = deadBoss;
+    d.t += dt;
+    if (d.t < 1.3) {
+        spawnParticles(d.x + rand(0, d.w), d.y + rand(0, d.h), pick(['#ffd35c', '#ff5a52', '#fff3d6']), 3, { g: 400 });
+        addShake(5);
+    }
+    for (let i = 0; i < 2; i++) particles.push({ x: rand(0, W), y: -10, vx: rand(-60, 60), vy: rand(120, 300), g: 200, life: 1, decay: 0.5, size: rand(2, 4.5), color: pick(['#ffd35c', '#ff5a52', '#b7d65a', '#8fd8ff', '#fff3d6']) });
+    if (d.t > 1.5) {
+        spawnParticles(d.x + d.w / 2, d.y + d.h / 2, '#fff3d6', 50, { ring: true, g: 200 });
+        deadBoss = null;
+    }
+}
+
+function camState() {
+    const b = run.boss;
+    if (b && b.enter > 0) {
+        const p = 1 - b.enter / INTRO;
+        const z = 1 + 0.5 * ease(clamp(p / 0.35, 0, 1)) * (1 - ease(clamp((p - 0.72) / 0.28, 0, 1)));
+        return { z, x: b.x + b.w / 2, y: Math.max(H * 0.2, b.y + b.h / 2) };
+    }
+    if (deadBoss && deadBoss.t < 1.3) return { z: 1 + 0.2 * (deadBoss.t / 1.3), x: deadBoss.x + deadBoss.w / 2, y: deadBoss.y + deadBoss.h / 2 };
+    if (run.lives <= 0) return { z: 1 + 0.3 * ease(clamp(1 - dyingT / DYING, 0, 1)), x: player.x + player.w / 2, y: player.y + player.h / 2 };
+    return null;
+}
+
+function drawCine() {
+    const b = run.boss;
+    ctx.save();
+    if (b && b.enter > 0) {
+        const p = 1 - b.enter / INTRO, th = BOSS_THEME[b.kind];
+        const e = Math.min(1, p / 0.15) * (1 - clamp((p - 0.88) / 0.12, 0, 1));
+        const fcx = b.x + b.w / 2, fcy = Math.max(H * 0.2, b.y + b.h / 2), R0 = Math.max(W, H) * 1.3;
+        ctx.save();
+        // Цветная пульсирующая виньетка по краям
+        const vg = ctx.createRadialGradient(fcx, fcy, Math.min(W, H) * 0.25, fcx, fcy, R0 * 0.62);
+        vg.addColorStop(0, 'rgba(' + th.tint + ',0)');
+        vg.addColorStop(1, 'rgba(' + th.tint + ',' + (0.5 * e * (0.8 + 0.2 * Math.sin(p * 30))) + ')');
+        ctx.fillStyle = vg;
+        ctx.fillRect(0, 0, W, H);
+        // Вращающиеся лучи света из-за босса
+        ctx.globalCompositeOperation = 'lighter';
+        ctx.fillStyle = 'rgba(' + th.tint + ',' + (0.11 * e) + ')';
+        for (let i = 0; i < 12; i++) {
+            const a = animT * 0.5 + i * Math.PI / 6;
+            ctx.beginPath();
+            ctx.moveTo(fcx, fcy);
+            ctx.lineTo(fcx + Math.cos(a) * R0, fcy + Math.sin(a) * R0);
+            ctx.lineTo(fcx + Math.cos(a + 0.12) * R0, fcy + Math.sin(a + 0.12) * R0);
+            ctx.closePath();
+            ctx.fill();
+        }
+        // Скоростные линии, пока босс падает
+        const sl = e * (1 - clamp((p - 0.45) / 0.15, 0, 1));
+        if (sl > 0.02) {
+            ctx.strokeStyle = 'rgba(255,255,255,' + (0.5 * sl) + ')';
+            ctx.lineWidth = 2;
+            for (let i = 0; i < 26; i++) {
+                const a = i * 2.399, f = (animT * 2.6 + i * 0.37) % 1, r1 = R0 * (0.2 + 0.4 * f), r2 = r1 + R0 * 0.18;
+                ctx.beginPath();
+                ctx.moveTo(fcx + Math.cos(a) * r1, fcy + Math.sin(a) * r1);
+                ctx.lineTo(fcx + Math.cos(a) * r2, fcy + Math.sin(a) * r2);
+                ctx.stroke();
+            }
+        }
+        // Ударные волны при приземлении
+        const age = (p - 0.55) * INTRO;
+        if (age > 0 && age < 1.1) {
+            ctx.strokeStyle = th.c;
+            [0, 0.18].forEach((d) => {
+                const q = age - d;
+                if (q > 0) {
+                    ctx.globalAlpha = clamp(1 - q / 0.9, 0, 1);
+                    ctx.lineWidth = 8 * clamp(1 - q, 0, 1) + 2;
+                    ctx.beginPath();
+                    ctx.arc(fcx, fcy, q * Math.max(W, H) * 0.9, 0, Math.PI * 2);
+                    ctx.stroke();
+                }
+            });
+        }
+        ctx.restore();
+        // Светящаяся диагональная лента с бликом под названием босса
+        const tp0 = clamp((p - 0.3) / 0.2, 0, 1), to0 = 1 - clamp((p - 0.85) / 0.15, 0, 1);
+        if (tp0 > 0 && to0 > 0) {
+            const nm = BOSSES[b.kind].name.toUpperCase(), fs0 = Math.min(54, W * 0.92 / (nm.length * 0.82));
+            const bh2 = fs0 * 3.1;
+            ctx.save();
+            ctx.globalAlpha = tp0 * to0;
+            ctx.translate(W / 2 + (1 - ease(tp0)) * W * 1.1, H * 0.52);
+            ctx.rotate(-0.07);
+            const gx = ctx.createLinearGradient(-W, 0, W, 0);
+            gx.addColorStop(0, 'rgba(' + th.tint + ',0)');
+            gx.addColorStop(0.25, 'rgba(' + th.tint + ',0.34)');
+            gx.addColorStop(0.75, 'rgba(' + th.tint + ',0.34)');
+            gx.addColorStop(1, 'rgba(' + th.tint + ',0)');
+            ctx.fillStyle = gx;
+            ctx.fillRect(-W, -bh2 / 2, W * 2, bh2);
+            ctx.fillStyle = th.c;
+            ctx.fillRect(-W, -bh2 / 2, W * 2, 3);
+            ctx.fillRect(-W, bh2 / 2 - 3, W * 2, 3);
+            const sx = ((animT * 0.9) % 1) * W * 2 - W;
+            const sg = ctx.createLinearGradient(sx - 90, 0, sx + 90, 0);
+            sg.addColorStop(0, 'rgba(255,255,255,0)');
+            sg.addColorStop(0.5, 'rgba(255,255,255,0.35)');
+            sg.addColorStop(1, 'rgba(255,255,255,0)');
+            ctx.fillStyle = sg;
+            ctx.fillRect(sx - 90, -bh2 / 2, 180, bh2);
+            ctx.restore();
+        }
+        const tp = clamp((p - 0.3) / 0.2, 0, 1), to = 1 - clamp((p - 0.85) / 0.15, 0, 1);
+        const name = BOSSES[b.kind].name.toUpperCase();
+        const fs = Math.min(54, W * 0.92 / (name.length * 0.82));
+        ctx.globalAlpha = tp * to;
+        ctx.translate(W / 2, H * 0.52);
+        const s = 0.6 + 0.4 * ease(tp);
+        ctx.scale(s, s);
+        ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.lineJoin = 'round';
+        ctx.font = '800 ' + Math.round(fs * 0.4) + 'px Unbounded, system-ui, sans-serif';
+        ctx.fillStyle = '#fff6e0';
+        ctx.fillText('— БОСС —', 0, -fs * 0.95);
+        ctx.font = '900 ' + Math.round(fs) + 'px Unbounded, system-ui, sans-serif';
+        ctx.lineWidth = 8; ctx.strokeStyle = 'rgba(14, 9, 20, 0.92)';
+        ctx.strokeText(name, 0, 0);
+        ctx.fillStyle = th.c;
+        ctx.shadowColor = th.c; ctx.shadowBlur = 22;
+        ctx.fillText(name, 0, 0);
+        ctx.shadowBlur = 0;
+        ctx.font = '800 ' + Math.round(fs * 0.36) + 'px Unbounded, system-ui, sans-serif';
+        ctx.fillStyle = '#fff6e0';
+        ctx.fillText(th.tag, 0, fs * 0.9);
+    } else if (deadBoss || ((state === 'dying' || state === 'gameover') && (run.lives <= 0 || mp))) {
+        const lost = run.lives <= 0;
+        const a = deadBoss ? Math.min(1, deadBoss.t * 3) * (1 - clamp((deadBoss.t - 1.2) / 0.3, 0, 1)) : Math.min(1, (1 - dyingT / DYING) * 1.5);
+        const txt = deadBoss ? 'ПОБЕДА!' : (lost ? 'Поражение…' : 'Победа!');
+        ctx.globalAlpha = clamp(a, 0, 1);
+        ctx.translate(W / 2, H * 0.4);
+        ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.lineJoin = 'round';
+        ctx.font = '900 ' + Math.round(Math.min(46, W * 0.11)) + 'px Unbounded, system-ui, sans-serif';
+        ctx.lineWidth = 7; ctx.strokeStyle = 'rgba(14, 9, 20, 0.9)';
+        ctx.strokeText(txt, 0, 0);
+        ctx.fillStyle = lost ? '#ff5a52' : '#ffd35c';
+        ctx.fillText(txt, 0, 0);
+    }
+    ctx.restore();
+    if (run.lives <= 0 && (state === 'dying' || state === 'gameover')) {
+        ctx.fillStyle = 'rgba(10, 4, 16, ' + (0.45 * clamp(1 - dyingT / DYING, 0, 1)) + ')';
+        ctx.fillRect(0, 0, W, H);
+    }
+    if (run.event) {
+        ctx.font = '800 12px Unbounded, system-ui, "Apple Color Emoji", sans-serif';
+        ctx.textAlign = 'right'; ctx.textBaseline = 'top'; ctx.lineWidth = 4; ctx.lineJoin = 'round';
+        ctx.strokeStyle = 'rgba(23, 16, 31, 0.85)';
+        const s = EVENTS[run.event.k].name + ' ' + Math.ceil(run.event.t);
+        ctx.strokeText(s, W - 12, mp ? 100 : 122);
+        ctx.fillStyle = '#8fd8ff';
+        ctx.fillText(s, W - 12, mp ? 100 : 122);
+    }
+}
+
+function drawShots() {
+    if (!shots.length) return;
+    const rec = R('smetannik');
+    for (const s of shots) {
+        ctx.save();
+        ctx.translate(s.x, s.y);
+        ctx.rotate(s.rot);
+        const sz = s.d > 1 ? 50 : 38;
+        if (rec.loaded && rec.trim) {
+            const t = rec.trim, h = sz * t.h / t.w;
+            ctx.drawImage(rec.img, t.x, t.y, t.w, t.h, -sz / 2, -h / 2, sz, h);
+        } else { ctx.fillStyle = '#fff3d6'; ctx.beginPath(); ctx.arc(0, 0, sz / 3, 0, Math.PI * 2); ctx.fill(); }
+        ctx.restore();
+    }
+}
+
+function drawDead() {
+    const d = deadBoss, t = d.t, rec = R(d.kind);
+    const k = t < 1.2 ? 1 + 0.1 * Math.sin(t * 40) : Math.max(0, 1 - (t - 1.2) / 0.3);
+    ctx.save();
+    ctx.translate(d.x + d.w / 2 + (t < 1.2 ? rand(-6, 6) : 0), d.y + d.h / 2);
+    ctx.rotate(t * 0.3);
+    ctx.scale(k, k);
+    if (rec.loaded && rec.trim) {
+        const tr = rec.trim;
+        ctx.drawImage(rec.img, tr.x, tr.y, tr.w, tr.h, -d.w / 2, -d.h / 2, d.w, d.h);
+        if (d.red && Math.floor(t * 20) % 2) ctx.drawImage(d.red, -d.w / 2, -d.h / 2, d.w, d.h);
+    }
+    ctx.restore();
+}
+
+function drawJar(b) {
+    // Банка сметаны сбоку: пустеет по мере урона
+    const jw = 24, jh = Math.min(H * 0.36, 280), x = W - jw - 14 + (b.hurt > 0 ? rand(-2, 2) : 0), y = Math.max(176, H * 0.26);
+    const f = clamp(b.hp / b.max, 0, 1), rage = b.phase === 3;
+    ctx.save();
+    rr(x - 3, y - 10, jw + 6, 10, 3); ctx.fillStyle = '#ffd35c'; ctx.fill();
+    ctx.fillStyle = '#f2a20f'; ctx.fillRect(x - 3, y - 4, jw + 6, 4);
+    rr(x, y, jw, jh, 8); ctx.fillStyle = 'rgba(255, 243, 214, 0.12)'; ctx.fill();
+    ctx.save();
+    rr(x, y, jw, jh, 8); ctx.clip();
+    const fy = y + jh * (1 - f), g = ctx.createLinearGradient(0, fy, 0, y + jh);
+    g.addColorStop(0, rage ? '#ffb0a8' : '#fffaf0'); g.addColorStop(1, rage ? '#ff5a52' : '#ffd35c');
+    ctx.fillStyle = g;
+    ctx.beginPath(); ctx.moveTo(x, y + jh); ctx.lineTo(x, fy);
+    for (let i = 0; i <= jw; i += 4) ctx.lineTo(x + i, fy + Math.sin(animT * 4 + i * 0.4) * 2);
+    ctx.lineTo(x + jw, y + jh); ctx.closePath(); ctx.fill();
+    ctx.restore();
+    rr(x, y, jw, jh, 8); ctx.lineWidth = 3; ctx.strokeStyle = b.hurt > 0 ? '#ff5a52' : 'rgba(255, 246, 224, 0.9)'; ctx.stroke();
+    ctx.fillStyle = 'rgba(23, 16, 31, 0.7)';
+    [1 / 3, 2 / 3].forEach((m) => ctx.fillRect(x, y + jh * (1 - m) - 1, jw, 2));
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillStyle = '#fff';
+    ctx.font = '20px system-ui, "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", sans-serif';
+    ctx.fillText(BOSSES[b.kind].icon, x + jw / 2, y - 26);
+    ctx.font = '800 10px Unbounded, system-ui, sans-serif'; ctx.lineWidth = 3; ctx.lineJoin = 'round'; ctx.strokeStyle = 'rgba(23, 16, 31, 0.85)';
+    ctx.strokeText(Math.ceil(b.hp), x + jw / 2, y + jh + 14);
+    ctx.fillText(Math.ceil(b.hp), x + jw / 2, y + jh + 14);
+    ctx.restore();
+}
+
+function drawBoss() {
+    if (deadBoss) drawDead();
+    const b = run.boss;
+    if (!b) return;
+    const rec = R(b.kind), bob = Math.sin(animT * 3) * 4, rage = b.phase === 3;
+    ctx.save();
+    ctx.translate(b.x + b.w / 2, b.y + b.h / 2 + bob);
+    ctx.rotate(Math.sin(animT * 2) * 0.05 + (rage ? Math.sin(animT * 28) * 0.03 : 0));
+    if (rec.loaded && rec.trim) {
+        const t = rec.trim;
+        ctx.globalAlpha = b.alpha;
+        ctx.drawImage(rec.img, t.x, t.y, t.w, t.h, -b.w / 2, -b.h / 2, b.w, b.h);
+        if (b.red) {
+            const a = b.hurt > 0 ? Math.min(1, b.hurt / 0.2) : (rage ? 0.15 + 0.12 * Math.sin(animT * 8) : 0);
+            if (a > 0) { ctx.globalAlpha = b.alpha * a; ctx.drawImage(b.red, -b.w / 2, -b.h / 2, b.w, b.h); }
+        }
+    } else {
+        ctx.fillStyle = '#ff5a52'; ctx.beginPath(); ctx.arc(0, 0, b.w / 2, 0, Math.PI * 2); ctx.fill();
+    }
+    ctx.globalAlpha = 1;
+    ctx.font = Math.round(b.w * 0.28) + 'px system-ui, "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", sans-serif';
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillText(BOSSES[b.kind].icon, 0, -b.h / 2 - 6);
+    ctx.restore();
+    drawJar(b);
 }
 
 function triggerMeme67() {
@@ -1419,7 +2049,8 @@ function updatePlayer(dt) {
         targetX = clamp(targetX + dir * KEY_SPEED_BASE * clamp(W / 800, 0.7, 1.5) * dt, 0, W);
     }
     const k = 1 - Math.pow(0.7, dt * 60);
-    player.x += (targetX - player.w / 2 - player.x) * k;
+    const tx = (run.event && run.event.k === 'mirror') ? W - targetX : targetX;
+    player.x += (tx - player.w / 2 - player.x) * k;
     player.vx = (player.x - prevX) / Math.max(dt, 0.001);
     player.tilt = lerp(player.tilt, clamp(player.vx / 2600, -0.14, 0.14), Math.min(1, dt * 12));
     // Ширина зоны ловли: как раньше (46% ширины), но не уже 38% высоты героя,
@@ -1435,6 +2066,7 @@ function updatePlayer(dt) {
 
 function updateFx(dt) {
     animT += dt;
+    if (deadBoss) tickDead(dt);
     fx.shake = fx.shake < 0.15 ? 0 : fx.shake * Math.pow(0.02, dt);
     fx.dmg = Math.max(0, fx.dmg - 2.2 * dt);
     fx.gold = Math.max(0, fx.gold - 1.8 * dt);
@@ -1461,6 +2093,7 @@ function updateFx(dt) {
 function updateWorld(dt) {
     run.time += dt;
     if (run.magnetT > 0) run.magnetT = Math.max(0, run.magnetT - dt);
+    if (run.dblT > 0) run.dblT = Math.max(0, run.dblT - dt);
     if (run.slowT > 0) run.slowT = Math.max(0, run.slowT - dt);
     if (run.shield) {
         run.shieldT -= dt;
@@ -1477,9 +2110,10 @@ function updateWorld(dt) {
     run.achT = (run.achT || 0) + dt;
     if (run.achT >= 1) { run.achT = 0; checkAchievements(); }
 
-    const ts = run.slowT > 0 ? 0.55 : 1;
-    run.spawnT -= dt * ts;
-    if (run.spawnT <= 0) {
+    const ts = (run.slowT > 0 ? 0.55 : 1) * ((run.boss && run.boss.enter > 0) ? 0.25 : 1) * (deadBoss ? 0.4 : 1);
+    if (!run.boss) updateEvents(dt, ts);
+    if (run.boss) { updateBoss(run.boss.enter > 0 ? dt : dt * ts); if (run.boss) updateShots(dt); } else run.spawnT -= dt * ts;
+    if (!run.boss && run.spawnT <= 0) {
         spawnItem();
         run.spawnT += spawnInterval();
     }
@@ -1490,6 +2124,8 @@ function updateWorld(dt) {
     for (let i = items.length - 1; i >= 0; i--) {
         const it = items[i];
         it.y += it.speed * dt * ts;
+        if (it.sway) it.x = clamp(it.x + Math.cos(animT * 3 + it.phase) * it.sway * dt * ts, 4, W - it.w - 4);
+        if (it.vx) { it.x += it.vx * dt * ts; if (it.x < 2 || it.x > W - it.w - 2) { it.vx = -it.vx; it.x = clamp(it.x, 2, W - it.w - 2); } }
 
         if (run.magnetT > 0 && (it.kind === 'smetannik' || it.kind === 'golden' || it.kind === 'olive')) {
             const dx = pcx - (it.x + it.w / 2);
@@ -1515,32 +2151,53 @@ function updateWorld(dt) {
             if (run.lives <= 0) break;
         }
     }
+    if (run.clearItems) { items.length = 0; run.clearItems = false; }
     if (run.lives <= 0 && state === 'playing') startDying();
 }
 
+function stepOne(dt, mode) {
+    if (mode === 'countdown') { updatePlayer(dt); updateFx(dt); }
+    else if (mode === 'playing') { updatePlayer(dt); updateWorld(dt); updateFx(dt); }
+    else if (mode === 'dying') { for (const it of items) it.y += it.speed * dt * 0.2; updateFx(dt * 0.5); }
+}
+
+// Во время боссфайта играет отдельный трек, после победы возвращается обычная музыка
+function syncMusic() {
+    if (state !== 'playing' && state !== 'countdown' && state !== 'dying') return;
+    if (settings.music <= 0) return;
+    const want = mp ? worlds.some((w) => w.run.boss) : !!run.boss;
+    if (want) {
+        if (!audioMusic.paused) audioMusic.pause();
+        if (audioBoss.paused) audioBoss.play().catch(() => {});
+    } else if (!audioBoss.paused || audioBoss.currentTime > 0) {
+        audioBoss.pause(); audioBoss.currentTime = 0;
+        if (audioMusic.paused) audioMusic.play().catch(() => {});
+    }
+}
+
 function step(dt) {
-    if (state === 'countdown') {
-        updatePlayer(dt);
-        updateFx(dt);
+    syncMusic();
+    const mode = state, a0 = animT;
+    if (mp) {
+        worlds.forEach((w) => { animT = a0; loadW(w); stepOne(dt, mode); saveW(w); });
+        animT = a0 + (mode === 'dying' ? dt * 0.5 : dt);
+        if (mode === 'playing' && state === 'dying') {
+            const d = worlds.map((w) => w.run.lives <= 0);
+            loserIdx = d[0] && d[1] ? (worlds[0].run.score < worlds[1].run.score ? 0 : 1) : (d[0] ? 0 : 1);
+        }
+    } else {
+        stepOne(dt, mode);
+        if (mode === 'playing') renderPowers();
+    }
+    if (mode === 'countdown') {
         cd.t += dt;
         if (cd.t >= 0.7) {
             cd.t = 0;
             cd.n--;
-            if (cd.n <= 0) {
-                $('countdown').classList.add('hidden');
-                state = 'playing';
-            } else {
-                showCountdown();
-            }
+            if (cd.n <= 0) { $('countdown').classList.add('hidden'); state = 'playing'; }
+            else showCountdown();
         }
-    } else if (state === 'playing') {
-        updatePlayer(dt);
-        updateWorld(dt);
-        updateFx(dt);
-        renderPowers();
-    } else if (state === 'dying') {
-        for (const it of items) it.y += it.speed * dt * 0.2;
-        updateFx(dt * 0.5);
+    } else if (mode === 'dying') {
         dyingT -= dt;
         if (dyingT <= 0) gameOver();
     }
@@ -1549,7 +2206,7 @@ function step(dt) {
 // ---------- Кэши отрисовки ----------
 // Свечения (shadowBlur), масштабирование фона и градиенты — самое дорогое в кадре на телефоне.
 // Всё это один раз «запекается» в отдельные канвасы, а в кадре остаётся только drawImage.
-const cache = { key: '', bgKey: '', bg: null, bgDw: 0, bgDh: 0, overlay: null, items: {}, orbs: {}, player: null, aura: null, rim: null };
+let cache = { key: '', bgKey: '', bg: null, bgDw: 0, bgDh: 0, overlay: null, items: {}, orbs: {}, player: null, aura: null, rim: null };
 
 function mk(w, h) {
     const c = document.createElement('canvas');
@@ -1785,7 +2442,7 @@ function drawPlayer() {
     const s = cache.player;
     ctx.save();
     ctx.translate(cx, by);
-    ctx.rotate(player.tilt);
+    ctx.rotate(player.tilt + (run.lives <= 0 ? Math.min(1, 1 - dyingT / 1.4) * 0.9 : 0));
     const sq = fx.squash;
     ctx.scale(1 + 0.07 * sq, 1 - 0.07 * sq);
     if (run.shield && cache.aura && cache.rim) {
@@ -1816,6 +2473,7 @@ function drawItems() {
         ctx.save();
         ctx.translate(cx, cy);
         ctx.rotate(Math.sin(animT * 3 + it.phase) * 0.18);
+        if (it.ghost) ctx.globalAlpha = (it.y > H * 0.3 && it.y < H * 0.62) ? 0.18 : 1;
         if (POWER_INFO[it.kind]) {
             const s = cache.orbs[it.kind];
             if (s) {
@@ -1885,12 +2543,30 @@ function drawFxLayers() {
 
 function draw() {
     if (!W || !H) return;
-    const bg = ensureCache();
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-    ctx.clearRect(0, 0, W, H);
+    ctx.clearRect(0, 0, FW, H);
+    if (!mp) { drawWorld(); return; }
+    worlds.forEach((w, i) => {
+        loadW(w);
+        ctx.save();
+        ctx.beginPath(); ctx.rect(i * W, 0, W, H); ctx.clip();
+        ctx.translate(i * W, 0);
+        drawWorld();
+        drawMiniHud(i);
+        ctx.restore();
+        saveW(w);
+    });
+    ctx.fillStyle = '#17101f';
+    ctx.fillRect(W - 2, 0, 4, H);
+}
+
+function drawWorld() {
+    const bg = ensureCache();
 
     ctx.save();
     if (fx.shake > 0) ctx.translate((Math.random() - 0.5) * fx.shake, (Math.random() - 0.5) * fx.shake);
+    const cz = camState();
+    if (cz) { ctx.translate(cz.x, cz.y); ctx.scale(cz.z, cz.z); ctx.translate(-cz.x, -cz.y); }
 
     drawBackground(bg);
     if (cache.overlay) ctx.drawImage(cache.overlay, -20, -20, W + 40, H + 40);
@@ -1912,10 +2588,14 @@ function draw() {
     }
     ctx.globalAlpha = 1;
 
+    drawBoss();
     drawPlayer();
     drawItems();
     drawFxLayers();
+    drawShots();
+    drawEventFx();
     ctx.restore();
+    drawCine();
 
     // Вспышки поверх всего (без тряски)
     if (fx.dmg > 0.01) {
@@ -2016,9 +2696,9 @@ function renderHUD() {
         hudEls.combo.classList.add('hidden');
     }
 
-    const lt = 'Ур. ' + run.level;
+    const lt = run.boss ? 'БОСС' : 'Ур. ' + run.level;
     if (lt !== lvlShown) { lvlShown = lt; hudEls.lvl.textContent = lt; }
-    const lf = Math.round(((run.caught % LEVEL_STEP) / LEVEL_STEP) * 100) + '%';
+    const lf = run.boss ? Math.round(Math.max(0, run.boss.hp) / run.boss.max * 100) + '%' : Math.round(((run.caught % LEVEL_STEP) / LEVEL_STEP) * 100) + '%';
     if (lf !== fillShown) { fillShown = lf; hudEls.lvlF.style.width = lf; }
 
     prevHud = { s: run.score, t: run.tomatoes, l: run.lives, c: run.combo };
@@ -2029,7 +2709,8 @@ function renderPowers() {
     const active = {
         magnet: run.magnetT > 0 ? run.magnetT / POWER_INFO.magnet.dur : 0,
         slow: run.slowT > 0 ? run.slowT / POWER_INFO.slow.dur : 0,
-        shield: run.shield ? Math.min(1, run.shieldT / POWER_INFO.shield.dur) : 0
+        shield: run.shield ? Math.min(1, run.shieldT / POWER_INFO.shield.dur) : 0,
+        dbl: run.dblT > 0 ? run.dblT / POWER_INFO.dbl.dur : 0
     };
     for (const k of Object.keys(active)) {
         const v = active[k];
@@ -2066,12 +2747,13 @@ function clearPowers() {
 
 const SCREEN_IDS = {
     menu: 'screen-menu', hud: 'hud', skins: 'screen-skins', settings: 'screen-settings',
-    stats: 'screen-stats', pause: 'screen-pause', gameOver: 'screen-gameover'
+    stats: 'screen-stats', info: 'screen-info', shop: 'screen-shop', locations: 'screen-locations', pause: 'screen-pause', gameOver: 'screen-gameover'
 };
 
 function showScreen(key) {
     Object.keys(SCREEN_IDS).forEach((k) => $(SCREEN_IDS[k]).classList.add('hidden'));
     if (SCREEN_IDS[key]) $(SCREEN_IDS[key]).classList.remove('hidden');
+    container.classList.toggle('playing', key === 'hud');
 }
 
 const fmtTime = (sec) => {
@@ -2090,6 +2772,7 @@ function rankFor(score) {
 
 function updateMenuStats() {
     $('highScoreDisplay').textContent = highScore;
+    $('shopBal').textContent = wallet;
 }
 function updateAchBadge() {
     const n = ACH.filter((a) => unlocked[a.id]).length;
@@ -2122,10 +2805,11 @@ function beginCountdown(n, resume) {
 }
 
 // ---------- Ход игры ----------
-function startGame() {
+function startGame(twoP) {
     ensureAudio();
+    setMode(twoP === true);
     run = newRun();
-    items = []; particles = []; popups = [];
+    items = []; particles = []; popups = []; shots = []; deadBoss = null;
     fx = { shake: 0, dmg: 0, gold: 0, squash: 0, slowTint: 0 };
     clearPowers();
     prevHud = { s: 0, t: 0, l: 3, c: 0 };
@@ -2141,9 +2825,11 @@ function startGame() {
         skinsUsed.push(currentSkin);
         store.set('smetannikSkinsUsed', skinsUsed);
     }
+    applyBoosts();
     renderHUD();
     showScreen('hud');
-    if (settings.music > 0) { audioMusic.currentTime = 0; audioMusic.play().catch(() => {}); }
+    if (settings.music > 0) { audioMusic.currentTime = 0; audioBoss.currentTime = 0; audioMusic.play().catch(() => {}); }
+    if (mp) initWorlds();
     beginCountdown(3, false);
     checkAchievements();
 }
@@ -2151,9 +2837,10 @@ function startGame() {
 function pauseGame() {
     if (state !== 'playing' && state !== 'countdown') return;
     state = 'paused';
-    keys.left = keys.right = false;
+    saveWallet();
+    clearKeys();
     $('countdown').classList.add('hidden');
-    audioMusic.pause();
+    audioMusic.pause(); audioBoss.pause();
     stopLoop();
     showScreen('pause');
     draw();
@@ -2170,13 +2857,16 @@ function resumeGame() {
 
 function startDying() {
     state = 'dying';
-    dyingT = 1.0;
+    dyingT = 1.4;
     fx.dmg = 1;
     addShake(18);
     haptic('over');
 }
 
 function commitRun() {
+    saveItems();
+    saveWallet();
+    if (mp) return;
     if (run.committed) return;
     run.committed = true;
     if (run.time < 2 && run.score === 0) return;
@@ -2198,8 +2888,8 @@ function commitRun() {
 function gameOver() {
     state = 'gameover';
     stopLoop();
-    audioMusic.pause();
-    audioMusic.currentTime = 0;
+    audioMusic.pause(); audioBoss.pause();
+    audioMusic.currentTime = 0; audioBoss.currentTime = 0;
     commitRun();
 
     $('finalScore').textContent = run.score;
@@ -2210,6 +2900,9 @@ function gameOver() {
     $('goBest').textContent = highScore;
     $('newRecord').classList.toggle('hidden', !run.isNewRecord);
 
+    if (mp) mpResult(); else $('goTitle').textContent = 'Игра окончена';
+    $('goCoins').classList.toggle('hidden', mp);
+    $('goCoins').innerHTML = '+<b>' + run.earned + '</b> 🥧 в копилку (всего: <b>' + wallet + '</b>)';
     playSfx('over');
     showScreen('gameOver');
     draw();
@@ -2218,12 +2911,13 @@ function gameOver() {
 function quitToMenu() {
     stopLoop();
     commitRun();
+    setMode(false);
     state = 'menu';
-    audioMusic.pause();
-    audioMusic.currentTime = 0;
-    keys.left = keys.right = false;
+    audioMusic.pause(); audioBoss.pause();
+    audioMusic.currentTime = 0; audioBoss.currentTime = 0;
+    clearKeys();
     run = newRun();
-    items = []; particles = []; popups = [];
+    items = []; particles = []; popups = []; shots = []; deadBoss = null;
     fx = { shake: 0, dmg: 0, gold: 0, squash: 0, slowTint: 0 };
     clearPowers();
     $('countdown').classList.add('hidden');
@@ -2239,7 +2933,7 @@ function quitToMenu() {
 
 function restartFromPause() {
     commitRun();
-    startGame();
+    startGame(mp);
 }
 
 async function shareScore() {
@@ -2273,6 +2967,140 @@ function renderStatsScreen() {
     ).join('');
 }
 
+// ---------- Инфо ----------
+const INFO_CATS = [['items', 'Предметы'], ['powers', 'Бонусы'], ['bosses', 'Боссы'], ['rules', 'Механики']];
+const BOSS_COMMON = 'Пойманный сметанник отскакивает от героя и летит в босса (1 урон, золотой — 3)';
+const BOSS_COMMON2 = 'Пропущенный сметанник не отнимает жизнь, но лечит босса на 1';
+const INFO = [
+    { id: 'smetannik', cat: 'items', name: 'Сметанник', img: 'smetannik.png', tag: 'Еда', stat: 'smetannik', sl: 'Поймано',
+      text: 'Главная еда столовой. Лови как можно больше, чтобы расти в очках и уровнях.',
+      facts: ['Очки: +1 × множитель серии', 'Пропустишь — минус 1 жизнь', 'Каждые 20 пойманных — новый уровень', 'На боссе — снаряд, бьющий босса'] },
+    { id: 'golden', cat: 'items', name: 'Золотой сметанник', img: 'smetannik.png', css: 'sepia(1) saturate(4) brightness(1.15)', tag: 'Редкий', stat: 'golden', sl: 'Поймано',
+      text: 'Блестящий сметанник со звёздочкой. Падает редко, зато щедро награждает.',
+      facts: ['Очки: +5 × множитель серии', 'Засчитывается как 3 обычных', 'Против босса: 3 урона', 'Пропуск ничего не стоит'] },
+    { id: 'tomat', cat: 'items', name: 'Помидор', img: 'tomat.png', tag: 'Опасность', stat: 'tomat', sl: 'Попаданий',
+      text: 'Пропускай его! Попадание в героя отнимает жизнь и обнуляет серию.',
+      facts: ['Урон: −1 жизнь', 'Сбрасывает серию', 'С ростом уровня падает чаще', 'Щит блокирует удар'] },
+    { id: 'olive', cat: 'items', name: 'Маслина', img: 'olive.png', tag: 'Лечение', stat: 'olive', sl: 'Собрано',
+      text: 'Вкусная маслина возвращает силы. Если жизней уже максимум, даёт очки.',
+      facts: ['+1 жизнь (максимум 5)', 'При полных жизнях: +3 очка', 'Появляется редко'] },
+    { id: 'magnet', cat: 'powers', name: 'Магнит', emoji: '🧲', tag: POWER_INFO.magnet.dur + ' сек', stat: 'magnet', sl: 'Подобрано',
+      text: 'Притягивает сметанники, золотые сметанники и маслины прямо к герою.',
+      facts: ['Длительность: ' + POWER_INFO.magnet.dur + ' секунд', 'Помидоры не притягиваются'] },
+    { id: 'slow', cat: 'powers', name: 'Заморозка', emoji: '❄️', tag: POWER_INFO.slow.dur + ' сек', stat: 'slow', sl: 'Подобрано',
+      text: 'Время замедляется: всё падает медленнее, а новые предметы появляются реже.',
+      facts: ['Длительность: ' + POWER_INFO.slow.dur + ' секунд', 'Экран окрашивается в голубой'] },
+    { id: 'shield', cat: 'powers', name: 'Щит', emoji: '🛡️', tag: POWER_INFO.shield.dur + ' сек', stat: 'shield', sl: 'Подобрано',
+      text: 'Защитная аура вокруг героя. Принимает на себя один удар помидора или промаха.',
+      facts: ['Держится до ' + POWER_INFO.shield.dur + ' секунд', 'Блокирует один урон', 'Перед исчезновением мигает'] },
+    { id: 'b_smetannik', cat: 'bosses', boss: 'smetannik', name: 'Сметанный Король', img: 'smetannik.png', tag: 'Уровни 5, 20, 35…',
+      text: 'Мечется по верху экрана и сыплет сметанниками вперемешку с помидорами. Периодически устраивает «сметанный ливень».',
+      facts: ['Здоровье: 80 (+18 за каждого следующего босса)', 'Ливень: ряд сметанников по всей ширине', 'Фаза 2: веер из 3 предметов, золотые и помидоры в ливне', 'Фаза 3 (ярость): быстрее, двойной ливень', BOSS_COMMON, BOSS_COMMON2] },
+    { id: 'b_tomat', cat: 'bosses', boss: 'tomat', name: 'Помидор-Громила', img: 'tomat.png', tag: 'Уровни 10, 25, 40…',
+      text: 'Тяжёлый и неторопливый. Строит стены из помидоров с широким проходом, в котором лежат сметанники.',
+      facts: ['Здоровье: 98 (+18 за каждого следующего босса)', 'Стена с широким проходом', 'Фаза 2: по бокам катятся отскакивающие помидоры', 'Фаза 3 (ярость): две стены подряд', BOSS_COMMON, BOSS_COMMON2] },
+    { id: 'b_olive', cat: 'bosses', boss: 'olive', name: 'Оливка-Призрак', img: 'olive.png', tag: 'Уровни 15, 30, 45…',
+      text: 'Телепортируется по экрану, а её предметы раскачиваются и пропадают из виду посреди падения. Иногда кидает лечащие маслины.',
+      facts: ['Здоровье: 116 (+18 за каждого следующего босса)', 'Телепорт и тройной залп', 'Призрачная стая: большой залп невидимок', 'Фаза 3 (ярость): телепорт каждые 1,4 с', BOSS_COMMON, BOSS_COMMON2] },
+    { id: 'combo', cat: 'rules', name: 'Серия', emoji: '🔥', tag: 'Без предела',
+      text: 'Лови сметанники подряд без ошибок. Каждые 10 в серии повышают множитель очков, и предела нет.',
+      facts: ['x1 → x2 → x3 → … без ограничений', 'Попавший помидор или промах обнуляет серию'] },
+    { id: 'levels', cat: 'rules', name: 'Уровни', emoji: '🚀', tag: 'Прогресс',
+      text: 'Каждые 20 пойманных сметанников дают новый уровень. Игра становится сложнее с каждым уровнем и без потолка.',
+      facts: ['Если жизней меньше 3, уровень даёт +1 жизнь', 'Каждый 5-й уровень — битва с боссом', 'Боссы идут по кругу и с каждым разом сильнее'] },
+    { id: 'lives', cat: 'rules', name: 'Жизни', emoji: '❤️', tag: 'Здоровье',
+      text: 'Ты начинаешь с тремя жизнями. Игра заканчивается, когда они кончатся.',
+      facts: ['Максимум: 5 жизней', 'Минус: помидор или пропущенный сметанник', 'Плюс: маслина, уровень, победа над боссом'] },
+    { id: 'events', cat: 'rules', name: 'События', emoji: '🎲', tag: 'Разнообразие',
+      text: 'Между боссами случаются события, меняющие правила на 8–12 секунд. Переживёшь — получишь +10 очков.',
+      facts: ['🥛 Сметанный дождь: почти всё съедобное', '🍅 Помидорный шторм: стены с проходом', '🌬️ Ветер: предметы сносит в стороны', '🌑 Свет погас: видно только рядом (с 3 ур.)', '🪞 Зеркало: управление наоборот (с 3 ур.)'] },
+    { id: 'versus', cat: 'rules', name: 'Для двоих', emoji: '👥', tag: 'Только ПК',
+      text: 'Разделённый экран: у каждого своя игра и свой босс. Проигрывает тот, кто первым потерял все жизни.',
+      facts: ['Игрок 1: клавиши A и D', 'Игрок 2: стрелки или мышь', 'Героев выбирают в «Скинах» (вкладки игроков)'] }
+];
+let infoCat = 'items', infoSel = 'smetannik';
+const infoIcon = (e) => e.img ? '<img src="' + e.img + '" alt=""' + (e.css ? ' style="filter:' + e.css + '"' : '') + '>' : e.emoji;
+
+function renderInfo() {
+    $('infoTabs').innerHTML = INFO_CATS.map((c) => '<button type="button" class="info-tab' + (c[0] === infoCat ? ' active' : '') + '" data-c="' + c[0] + '">' + c[1] + '</button>').join('');
+    const list = INFO.filter((e) => e.cat === infoCat);
+    if (!list.some((e) => e.id === infoSel)) infoSel = list[0].id;
+    $('infoGrid').innerHTML = list.map((e) => '<button type="button" class="info-tile' + (e.id === infoSel ? ' active' : '') + '" data-i="' + e.id + '"><span class="ic">' + infoIcon(e) + '</span><small>' + e.name + '</small></button>').join('');
+    const e = INFO.find((x) => x.id === infoSel);
+    const facts = e.facts.slice();
+    if (e.stat) facts.unshift('📊 ' + e.sl + ': ' + (itemStats[e.stat] || 0));
+    if (e.boss) facts.unshift('📊 Побеждён раз: ' + (bossesBeaten[e.boss] || 0));
+    $('infoCard').innerHTML = '<div class="info-head"><div class="info-big">' + infoIcon(e) + '</div><div><h4>' + e.name + '</h4><span class="info-tag">' + e.tag + '</span></div></div><p>' + e.text + '</p><ul class="info-facts">' + facts.map((f) => '<li>' + f + '</li>').join('') + '</ul>';
+}
+
+// ---------- Локации ----------
+// Чтобы добавить локацию: ready: true, img: 'файл.jpg' (превью). Выбранная локация хранится в currentLoc.
+const LOCATIONS = [
+    { id: 'stolovka', name: 'Столовая', ready: true, img: 'stolovka.jpg' },
+    { id: 'loc2', name: 'Новая локация', ready: false },
+    { id: 'loc3', name: 'Новая локация', ready: false },
+    { id: 'loc4', name: 'Новая локация', ready: false }
+];
+function renderLocations() {
+    $('locGrid').innerHTML = LOCATIONS.map((l) => {
+        const on = l.ready && l.id === currentLoc;
+        const bg = l.ready && l.img ? 'background-image:url(' + l.img + ')' : 'background:linear-gradient(135deg,#3a2a52,#1c1228)';
+        return '<button type="button" class="loc-card' + (on ? ' active' : '') + (l.ready ? '' : ' locked') + '" data-loc="' + l.id + '"' + (l.ready ? '' : ' aria-disabled="true"') + '>' +
+            '<span class="loc-bg" style="' + bg + '"></span>' + (l.ready ? '' : '<span class="loc-lock">🔒</span>') +
+            '<span class="loc-info"><b>' + l.name + '</b><small>' + (l.ready ? (on ? 'Выбрано' : 'Выбрать') : 'В разработке') + '</small></span></button>';
+    }).join('');
+}
+
+// ---------- Магазин ----------
+const BOOSTS = [
+    { id: 'heart',  icon: '\u2764\ufe0f', name: 'Запасное сердце', desc: 'Старт с 4 жизнями вместо 3', price: 40, apply: (r) => { r.lives = 4; } },
+    { id: 'shield', icon: '🛡\ufe0f', name: 'Стартовый щит', desc: 'Щит на 30 секунд с первой секунды', price: 30, apply: (r) => { r.shield = true; r.shieldT = 30; } },
+    { id: 'magnet', icon: '🧲', name: 'Магнитный старт', desc: 'Магнит работает первые 20 секунд', price: 30, apply: (r) => { r.magnetT = 20; } },
+    { id: 'double', icon: '\u2728', name: 'Двойная сметана', desc: 'Очки ×2 первые 45 секунд', price: 60, apply: (r) => { r.dblT = 45; } },
+    { id: 'revive', icon: '\u23f3', name: 'Второй шанс', desc: 'Когда жизни кончатся, вернёшься с 2 жизнями и щитом (один раз)', price: 90, apply: (r) => { r.revive = true; } }
+];
+const BOOST_MAX = 9;
+
+function applyBoosts() {
+    if (mp) return;
+    const used = [];
+    BOOSTS.forEach((bo) => {
+        if ((shopInv[bo.id] || 0) > 0 && shopOn[bo.id] !== false) {
+            shopInv[bo.id]--;
+            bo.apply(run);
+            used.push(bo.icon);
+        }
+    });
+    if (used.length) { store.set('smetannikShop', shopInv); showToast('🚀', 'Бусты в игре', used.join(' ')); }
+}
+
+function renderShop() {
+    $('shopBalance').textContent = wallet;
+    $('shopList').innerHTML = BOOSTS.map((bo) => {
+        const n = shopInv[bo.id] || 0, on = shopOn[bo.id] !== false;
+        return '<li class="shop-item' + (n ? ' owned' : '') + '" data-id="' + bo.id + '"><span class="shop-ic">' + bo.icon + '</span>' +
+            '<div class="shop-txt"><b>' + bo.name + '</b><small>' + bo.desc + '</small>' +
+            (n ? '<label class="shop-eq"><input type="checkbox" data-eq="' + bo.id + '"' + (on ? ' checked' : '') + '> брать в игру · есть ×' + n + '</label>' : '') +
+            '</div><button type="button" class="btn shop-buy' + (wallet >= bo.price && n < BOOST_MAX ? '' : ' poor') + '" data-buy="' + bo.id + '">' + bo.price + ' 🥧</button></li>';
+    }).join('');
+}
+
+function buyBoost(id) {
+    const bo = BOOSTS.find((x) => x.id === id);
+    if (!bo) return;
+    if ((shopInv[id] || 0) >= BOOST_MAX) { showToast('📦', 'Склад полон', 'Максимум ' + BOOST_MAX + ' штук'); return; }
+    if (wallet < bo.price) { showToast('🥧', 'Не хватает сметанников', 'Нужно ещё ' + (bo.price - wallet)); return; }
+    wallet -= bo.price;
+    shopInv[id] = (shopInv[id] || 0) + 1;
+    saveWallet();
+    store.set('smetannikShop', shopInv);
+    synth.ach();
+    renderShop();
+    updateMenuStats();
+    const li = $('shopList').querySelector('[data-id="' + id + '"]');
+    if (li) { li.classList.add('bump'); }
+}
+
 // ---------- Настройки ----------
 const rangeEls = { m: $('volMusic'), s: $('volSfx'), mp: $('volMusicPause'), sp: $('volSfxPause') };
 
@@ -2288,6 +3116,7 @@ function applyVolumes() {
     rangeEls.s.value = rangeEls.sp.value = settings.sfx;
     Object.values(rangeEls).forEach(paintRange);
     audioMusic.volume = settings.music;
+    audioBoss.volume = settings.music;
 }
 
 function bindRange(el, key) {
@@ -2318,12 +3147,128 @@ function bindSwitch(id, key) {
     });
 }
 
+// ---------- Режим для двоих ----------
+let worlds = [], loserIdx = -1;
+const newCache = () => ({ key: '', bgKey: '', bg: null, bgDw: 0, bgDh: 0, overlay: null, items: {}, orbs: {}, player: null, aura: null, rim: null });
+function mkWorld(skin) {
+    return { run: newRun(), items: [], particles: [], popups: [], fx: { shake: 0, dmg: 0, gold: 0, squash: 0, slowTint: 0 }, targetX: 0,
+        player: { w: 0, h: 0, x: 0, y: 0, vx: 0, tilt: 0, hit: { x: 0, y: 0, w: 0, h: 0 } }, cache: newCache(), skin, keys: { left: false, right: false }, shots: [], deadBoss: null };
+}
+function loadW(w) { run = w.run; items = w.items; particles = w.particles; popups = w.popups; fx = w.fx; targetX = w.targetX; player = w.player; cache = w.cache; currentSkin = w.skin; keys = w.keys; shots = w.shots; deadBoss = w.deadBoss; }
+function saveW(w) { w.run = run; w.items = items; w.particles = particles; w.popups = popups; w.fx = fx; w.targetX = targetX; w.shots = shots; w.deadBoss = deadBoss; }
+function initWorlds() {
+    loserIdx = -1;
+    worlds = [mkWorld(currentSkin), mkWorld(skin2)];
+    worlds.forEach((w) => { loadW(w); layoutPlayer(); player.x = W / 2 - player.w / 2; targetX = W / 2; saveW(w); });
+}
+function setMode(on) {
+    if (on === mp) return;
+    mp = on;
+    if (!on) { worlds = []; currentSkin = store.get('smetannikSkin', 'elisei.png'); if (!SKIN_FILES[currentSkin]) currentSkin = 'elisei.png'; }
+    container.classList.toggle('mp', on);
+    resizeCanvas();
+}
+function kset(k, v) {
+    const left = k === 'ArrowLeft' || k === 'KeyA';
+    const o = mp ? (worlds[k.startsWith('Arrow') ? 1 : 0] || {}).keys : keys;
+    if (o) o[left ? 'left' : 'right'] = v;
+}
+function clearKeys() { keys.left = keys.right = false; worlds.forEach((w) => { w.keys.left = w.keys.right = false; }); }
+function mpResult() {
+    const a = worlds[0].run, b = worlds[1].run;
+    const win = loserIdx >= 0 ? 1 - loserIdx : (a.score >= b.score ? 0 : 1);
+    $('goTitle').textContent = 'Игрок ' + (win + 1) + ' побеждает!';
+    $('goRank').textContent = 'Счёт: ' + a.score + ' : ' + b.score;
+    $('finalScore').textContent = a.score + ':' + b.score;
+    $('goTime').textContent = fmtTime(Math.max(a.time, b.time));
+    $('goCombo').textContent = Math.max(a.bestCombo, b.bestCombo);
+    $('goLevel').textContent = Math.max(a.level, b.level);
+    $('newRecord').classList.add('hidden');
+}
+function drawMiniHud(i) {
+    const t = (s, x, y, sz, c, al) => {
+        ctx.font = '800 ' + sz + 'px Unbounded, system-ui, "Apple Color Emoji", sans-serif';
+        ctx.textAlign = al || 'left'; ctx.textBaseline = 'top'; ctx.lineJoin = 'round'; ctx.lineWidth = 4;
+        ctx.strokeStyle = 'rgba(23, 16, 31, 0.85)'; ctx.strokeText(s, x, y); ctx.fillStyle = c; ctx.fillText(s, x, y);
+    };
+    t('ИГРОК ' + (i + 1) + (i ? ' · ←/→ или мышь' : ' · A/D'), 12, 10, 10, '#fff6e0');
+    t(String(run.score), 12, 28, 26, '#ffd35c');
+    t('♥'.repeat(Math.max(0, Math.min(run.lives, 8))) + (run.lives > 8 ? '×' + run.lives : ''), 12, 62, 16, '#ff5a52');
+    if (run.combo >= 3) t('🔥' + run.combo + ' x' + comboMult(), 12, 86, 13, '#ffb347');
+    t(run.boss ? 'БОСС' : 'Ур. ' + run.level, W - 12, i ? 70 : 10, 12, '#fff6e0', 'right');
+}
+
+// ---------- События (разнообразие) ----------
+const EVENTS = {
+    rain:   { name: '🥛 Сметанный дождь', hint: 'лови всё, что падает!', dur: 9 },
+    storm:  { name: '🍅 Помидорный шторм', hint: 'ищи проход в стене', dur: 10 },
+    wind:   { name: '🌬️ Ветер', hint: 'предметы сносит в стороны', dur: 12 },
+    dark:   { name: '🌑 Свет погас', hint: 'видно только рядом с героем', dur: 10 },
+    mirror: { name: '🪞 Зеркало', hint: 'управление наоборот!', dur: 8 }
+};
+function startEvent() {
+    const k = pick(['rain', 'storm', 'wind'].concat(run.level >= 3 ? ['dark', 'mirror'] : []));
+    run.event = { k, t: EVENTS[k].dur, w: 0.5, s: 0 };
+    showBanner(EVENTS[k].name, EVENTS[k].hint, 1800);
+    fx.gold = 0.3; synth.combo(); haptic('combo');
+}
+function endEvent() {
+    run.event = null;
+    run.evT = rand(22, 38);
+    run.score += 10;
+    spawnPopup(player.x + player.w / 2, player.y - 30, 'Пережил! +10', '#8fd8ff', true);
+    checkAchievements(); renderHUD();
+}
+function updateEvents(dt, ts) {
+    const e = run.event;
+    if (!e) { if ((run.evT -= dt) <= 0 && run.caught >= 10) startEvent(); return; }
+    e.t -= dt;
+    if (e.k === 'storm' && (e.w -= dt * ts) <= 0) {
+        e.w = 2.8;
+        makeWall(3, baseSpeed() * 0.6, (k, x, ex) => { const d = itemDims(k); spawnItem(k, clamp(x - d.w / 2, 6, W - d.w - 6), ex); });
+    }
+    if (e.k === 'wind' && (e.s -= dt) <= 0) { e.s = 2.5; run.windDir *= -1; }
+    if (e.t <= 0) endEvent();
+}
+function makeWall(gapN, sp, fire, bonus) {
+    // Проход всегда шире героя с запасом; пустой (внутри максимум один сметанник, только у босса),
+    // а следующая стена сдвигается не дальше чем на 2 клетки, чтобы успеть перейти.
+    const size = clamp(W * 0.14, 46, 72) * SIZE_MUL.tomat, step = size * 1.12;
+    const n = Math.floor((W - 12) / step), m = (W - n * step) / 2 + step / 2;
+    const hw = (player && player.hit && player.hit.w) || size;
+    const gN = clamp(Math.max(gapN + 1, Math.ceil((hw + size * 2.6) / step)), 4, Math.max(4, n - 2));
+    let g = Math.floor(rand(0, n - gN + 1));
+    if (run.wallG !== undefined && run.time - run.wallT < 5) g = clamp(g, run.wallG - 2, run.wallG + 2);
+    g = clamp(g, 0, Math.max(0, n - gN));
+    run.wallG = g; run.wallT = run.time;
+    for (let i = 0; i < n; i++) {
+        if (i >= g && i < g + gN) { if (bonus && i === g + (gN >> 1)) fire('smetannik', m + i * step, { speed: sp }); }
+        else fire('tomat', m + i * step, { speed: sp });
+    }
+}
+function drawEventFx() {
+    const e = run.event;
+    if (!e || e.k !== 'dark') return;
+    const cx = player.x + player.w / 2, cy = player.y + player.h * 0.45, r = Math.min(H * 0.5, 420);
+    const g = ctx.createRadialGradient(cx, cy, r * 0.18, cx, cy, r);
+    g.addColorStop(0, 'rgba(8, 4, 14, 0)');
+    g.addColorStop(1, 'rgba(8, 4, 14, 0.96)');
+    ctx.fillStyle = g;
+    ctx.fillRect(-20, -20, W + 40, H + 40);
+}
+
 // ---------- Привязки ----------
+function paintSkins() {
+    const cur = skinTarget === 2 ? skin2 : currentSkin;
+    document.querySelectorAll('.skin-card').forEach((c) => c.classList.toggle('active', c.dataset.skin === cur));
+    document.querySelectorAll('#skinTabs .info-tab').forEach((b) => b.classList.toggle('active', +b.dataset.p === skinTarget));
+}
 function selectSkin(file) {
     if (!SKIN_FILES[file]) return;
+    if (skinTarget === 2) { skin2 = file; store.set('smetannikSkin2', file); paintSkins(); return; }
     currentSkin = file;
     store.set('smetannikSkin', file);
-    document.querySelectorAll('.skin-card').forEach((c) => c.classList.toggle('active', c.dataset.skin === file));
+    paintSkins();
     layoutPlayer();
     if (state !== 'playing' && state !== 'countdown') {
         player.x = W / 2 - player.w / 2;
@@ -2349,7 +3294,9 @@ function bindUI() {
 
     applyVolumes();
 
-    $('btn-play').addEventListener('click', startGame);
+    $('btn-play').addEventListener('click', () => startGame(false));
+    $('btn-play2').addEventListener('click', () => startGame(true));
+    $('skinTabs').addEventListener('click', (e) => { const b = e.target.closest('[data-p]'); if (b) { skinTarget = +b.dataset.p; paintSkins(); } });
     $('btn-skins').addEventListener('click', () => showScreen('skins'));
     $('btn-close-skins').addEventListener('click', () => { showScreen('menu'); requestDraw(); });
     $('btn-settings').addEventListener('click', () => showScreen('settings'));
@@ -2357,12 +3304,31 @@ function bindUI() {
     $('btn-stats').addEventListener('click', () => { renderStatsScreen(); showScreen('stats'); });
     $('btn-close-stats').addEventListener('click', () => showScreen('menu'));
 
+    $('btn-info').addEventListener('click', () => { renderInfo(); showScreen('info'); });
+    $('btn-shop').addEventListener('click', () => { renderShop(); showScreen('shop'); });
+    $('btn-close-shop').addEventListener('click', () => { showScreen('menu'); updateMenuStats(); });
+    $('shopList').addEventListener('click', (e) => { const b = e.target.closest('[data-buy]'); if (b) buyBoost(b.dataset.buy); });
+    $('shopList').addEventListener('change', (e) => {
+        const c = e.target.closest('[data-eq]');
+        if (c) { shopOn[c.dataset.eq] = c.checked; store.set('smetannikShopOn', shopOn); }
+    });
+    $('btn-close-info').addEventListener('click', () => showScreen('menu'));
+    $('btn-locs').addEventListener('click', () => { renderLocations(); showScreen('locations'); });
+    $('btn-close-locs').addEventListener('click', () => showScreen('menu'));
+    $('infoTabs').addEventListener('click', (e) => { const b = e.target.closest('[data-c]'); if (b) { infoCat = b.dataset.c; renderInfo(); } });
+    $('infoGrid').addEventListener('click', (e) => { const b = e.target.closest('[data-i]'); if (b) { infoSel = b.dataset.i; renderInfo(); } });
+    $('locGrid').addEventListener('click', (e) => {
+        const b = e.target.closest('[data-loc]');
+        const l = b && LOCATIONS.find((x) => x.id === b.dataset.loc);
+        if (l && l.ready) { currentLoc = l.id; store.set('smetannikLoc', l.id); renderLocations(); }
+    });
+
     $('btn-pause').addEventListener('click', pauseGame);
     $('btn-resume').addEventListener('click', resumeGame);
     $('btn-pause-restart').addEventListener('click', restartFromPause);
     $('btn-quit').addEventListener('click', quitToMenu);
 
-    $('btn-restart').addEventListener('click', startGame);
+    $('btn-restart').addEventListener('click', () => startGame(mp));
     $('btn-share').addEventListener('click', shareScore);
     $('btn-menu-from-go').addEventListener('click', quitToMenu);
 
@@ -2384,7 +3350,7 @@ function bindUI() {
     });
 
     // Автопауза, когда вкладка уходит в фон
-    const autoPause = () => { keys.left = keys.right = false; if (state === 'playing' || state === 'countdown') pauseGame(); };
+    const autoPause = () => { clearKeys(); if (state === 'playing' || state === 'countdown') pauseGame(); };
     document.addEventListener('visibilitychange', () => { if (document.hidden) autoPause(); });
     window.addEventListener('blur', autoPause);
     window.addEventListener('resize', resizeCanvas);
@@ -2403,6 +3369,8 @@ function init() {
         renderHUD();
         updateMenuStats();
         updateAchBadge();
+        if (!SKIN_FILES[skin2]) skin2 = 'greben.png';
+        if (window.matchMedia('(hover:hover) and (pointer:fine)').matches) $('btn-play2').classList.remove('hidden');
         showScreen('menu');
         const L = $('screen-loading');
         L.classList.add('fade-out');
